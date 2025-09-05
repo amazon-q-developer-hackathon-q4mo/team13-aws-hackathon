@@ -60,7 +60,7 @@ docker run -p 8000:8000 amazon/dynamodb-local
 # 환경변수 설정
 export EVENTS_TABLE=liveinsight-events-dev
 export SESSIONS_TABLE=liveinsight-sessions-dev
-export AWS_REGION=ap-northeast-2
+export AWS_REGION=us-east-1
 
 # FastAPI 로컬 실행
 cd src && uvicorn handlers.event_collector:app --reload

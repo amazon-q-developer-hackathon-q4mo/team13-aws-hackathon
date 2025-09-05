@@ -340,7 +340,7 @@ def batch_write_events(events: list[Event]):
 # Lambda 환경 변수
 EVENTS_TABLE = os.environ['EVENTS_TABLE']        # liveinsight-events-dev
 SESSIONS_TABLE = os.environ['SESSIONS_TABLE']    # liveinsight-sessions-dev
-AWS_REGION = os.environ.get('AWS_REGION', 'ap-northeast-2')
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 API_KEY = os.environ.get('API_KEY', 'dev-api-key-12345')
 ENVIRONMENT = os.environ.get('ENVIRONMENT', 'dev')
 ```

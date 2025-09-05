@@ -18,7 +18,7 @@
 #### 체크리스트
 - [x] AWS Provider 5.0 설정 완료
 - [x] 기본 태그 정책 적용
-- [x] 변수 기본값 설정 (region: ap-northeast-2, env: dev)
+- [x] 변수 기본값 설정 (region: us-east-1, env: dev)
 
 ### 2단계: DynamoDB 테이블 생성 (45분) ✅ 완료
 #### 작업 내용

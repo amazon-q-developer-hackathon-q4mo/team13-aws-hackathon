@@ -237,7 +237,7 @@ uv run mypy src/
 ```bash
 EVENTS_TABLE=liveinsight-events-dev
 SESSIONS_TABLE=liveinsight-sessions-dev
-AWS_REGION=ap-northeast-2
+AWS_REGION=us-east-1
 API_KEY=dev-api-key-12345
 ENVIRONMENT=dev
 ```
