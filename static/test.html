@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveInsight 테스트 페이지</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .status {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 LiveInsight 테스트 페이지</h1>
+        <p>실시간 웹 분석 추적 스크립트 테스트</p>
+    </div>
+
+    <div class="section">
+        <h2>📊 추적 상태</h2>
+        <div id="status" class="status">
+            LiveInsight 초기화 중...
+        </div>
+        <div>
+            <strong>세션 ID:</strong> <span id="session-id">-</span><br>
+            <strong>사용자 ID:</strong> <span id="user-id">-</span><br>
+            <strong>현재 URL:</strong> <span id="current-url">-</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 이벤트 테스트</h2>
+        <button class="button" onclick="testPageView()">페이지뷰 추적</button>
+        <button class="button" onclick="testCustomEvent()">커스텀 이벤트</button>
+        <button class="button" onclick="testButtonClick()">버튼 클릭</button>
+        <button class="button" onclick="testFormSubmit()">폼 제출</button>
+        <button class="button" onclick="testScrollEvent()">스크롤 이벤트</button>
+    </div>
+
+    <div class="section">
+        <h2>📝 커스텀 이벤트 생성</h2>
+        <div class="form-group">
+            <label for="event-type">이벤트 타입:</label>
+            <input type="text" id="event-type" placeholder="예: button_click" value="custom_test">
+        </div>
+        <div class="form-group">
+            <label for="event-properties">속성 (JSON):</label>
+            <textarea id="event-properties" rows="3" placeholder='{"key": "value"}'>{
+  "test_property": "test_value",
+  "timestamp": "custom"
+}</textarea>
+        </div>
+        <button class="button" onclick="sendCustomEvent()">커스텀 이벤트 전송</button>
+    </div>
+
+    <div class="section">
+        <h2>📋 이벤트 로그</h2>
+        <button class="button" onclick="clearLog()">로그 지우기</button>
+        <div id="event-log" class="log">
+            이벤트 로그가 여기에 표시됩니다...
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔧 디버깅 도구</h2>
+        <button class="button" onclick="showSessionInfo()">세션 정보 보기</button>
+        <button class="button" onclick="showLocalStorage()">로컬스토리지 보기</button>
+        <button class="button" onclick="testAPIConnection()">API 연결 테스트</button>
+        <button class="button" onclick="clearAllData()">모든 데이터 지우기</button>
+    </div>
+
+    <!-- LiveInsight 스크립트 -->
+    <script src="./js/liveinsight.js"></script>
+    <script>
+        // LiveInsight 초기화
+        LiveInsight.init('test-site-key', {
+            flushInterval: 2000 // 테스트용으로 2초로 단축
+        });
+
+        // 로그 함수
+        function log(message) {
+            const logDiv = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log('LiveInsight Test:', message);
+        }
+
+        // 상태 업데이트
+        function updateStatus() {
+            try {
+                const sessionData = JSON.parse(localStorage.getItem('liveinsight_session') || '{}');
+                const userId = localStorage.getItem('liveinsight_user_id');
+                
+                document.getElementById('session-id').textContent = sessionData.sessionId || '-';
+                document.getElementById('user-id').textContent = userId || '-';
+                document.getElementById('current-url').textContent = window.location.href;
+                document.getElementById('status').textContent = 'LiveInsight 활성화됨 ✅';
+                
+                log('상태 업데이트 완료');
+            } catch (e) {
+                document.getElementById('status').textContent = 'LiveInsight 오류 ❌';
+                log('상태 업데이트 오류: ' + e.message);
+            }
+        }
+
+        // 테스트 함수들
+        function testPageView() {
+            LiveInsight.track('page_view', {
+                test: true,
+                manual_trigger: true
+            });
+            log('페이지뷰 이벤트 전송');
+        }
+
+        function testCustomEvent() {
+            LiveInsight.track('test_event', {
+                category: 'testing',
+                action: 'manual_test',
+                value: Math.floor(Math.random() * 100)
+            });
+            log('커스텀 이벤트 전송');
+        }
+
+        function testButtonClick() {
+            LiveInsight.track('button_click', {
+                button_id: 'test-button',
+                button_text: '테스트 버튼',
+                click_count: 1
+            });
+            log('버튼 클릭 이벤트 전송');
+        }
+
+        function testFormSubmit() {
+            LiveInsight.track('form_submit', {
+                form_type: 'test_form',
+                form_fields: ['name', 'email'],
+                validation_passed: true
+            });
+            log('폼 제출 이벤트 전송');
+        }
+
+        function testScrollEvent() {
+            LiveInsight.track('scroll_depth', {
+                depth_percent: 75,
+                page_height: document.body.scrollHeight,
+                viewport_height: window.innerHeight
+            });
+            log('스크롤 이벤트 전송');
+        }
+
+        function sendCustomEvent() {
+            const eventType = document.getElementById('event-type').value;
+            const propertiesText = document.getElementById('event-properties').value;
+            
+            try {
+                const properties = JSON.parse(propertiesText);
+                LiveInsight.track(eventType, properties);
+                log(`커스텀 이벤트 전송: ${eventType}`);
+            } catch (e) {
+                log('JSON 파싱 오류: ' + e.message);
+                alert('속성 JSON 형식이 올바르지 않습니다.');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '로그가 지워졌습니다.\n';
+        }
+
+        function showSessionInfo() {
+            try {
+                const sessionData = localStorage.getItem('liveinsight_session');
+                const userData = localStorage.getItem('liveinsight_user_id');
+                
+                log('=== 세션 정보 ===');
+                log('세션 데이터: ' + (sessionData || '없음'));
+                log('사용자 ID: ' + (userData || '없음'));
+                log('==================');
+            } catch (e) {
+                log('세션 정보 조회 오류: ' + e.message);
+            }
+        }
+
+        function showLocalStorage() {
+            log('=== 로컬스토리지 ===');
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('liveinsight_')) {
+                    log(`${key}: ${localStorage.getItem(key)}`);
+                }
+            }
+            log('==================');
+        }
+
+        function testAPIConnection() {
+            log('API 연결 테스트 시작...');
+            
+            fetch('https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    events: [{
+                        event_type: 'api_test',
+                        timestamp: Date.now(),
+                        test: true
+                    }]
+                })
+            })
+            .then(response => {
+                log(`API 응답: ${response.status} ${response.statusText}`);
+                return response.text();
+            })
+            .then(data => {
+                log(`API 응답 데이터: ${data}`);
+            })
+            .catch(error => {
+                log(`API 오류: ${error.message}`);
+            });
+        }
+
+        function clearAllData() {
+            localStorage.removeItem('liveinsight_session');
+            localStorage.removeItem('liveinsight_user_id');
+            log('모든 LiveInsight 데이터가 삭제되었습니다.');
+            updateStatus();
+        }
+
+        // 페이지 로드 시 상태 업데이트
+        window.addEventListener('load', function() {
+            setTimeout(updateStatus, 1000);
+        });
+
+        // 주기적 상태 업데이트
+        setInterval(updateStatus, 5000);
+
+        // 초기 로그
+        log('LiveInsight 테스트 페이지 로드됨');
+    </script>
+</body>
+</html>
