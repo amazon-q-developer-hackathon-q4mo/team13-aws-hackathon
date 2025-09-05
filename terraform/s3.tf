@@ -25,17 +25,17 @@ resource "aws_s3_bucket_website_configuration" "static_files" {
   }
 }
 
-# S3 버킷 퍼블릭 액세스 설정
+# S3 버킷 퍼블릭 액세스 차단
 resource "aws_s3_bucket_public_access_block" "static_files" {
   bucket = aws_s3_bucket.static_files.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-# S3 버킷 정책
+# S3 버킷 정책 - CloudFront OAC만 허용
 resource "aws_s3_bucket_policy" "static_files" {
   bucket = aws_s3_bucket.static_files.id
   depends_on = [aws_s3_bucket_public_access_block.static_files]
@@ -44,12 +44,19 @@ resource "aws_s3_bucket_policy" "static_files" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "PublicReadGetObject"
+        Sid       = "AllowCloudFrontServicePrincipal"
         Effect    = "Allow"
-        Principal = "*"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
         Action    = "s3:GetObject"
         Resource  = "${aws_s3_bucket.static_files.arn}/*"
-      },
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.static_files.arn
+          }
+        }
+      }
     ]
   })
 }

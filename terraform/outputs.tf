@@ -10,17 +10,17 @@ output "sessions_table_name" {
 
 output "lambda_event_collector_name" {
   description = "Event Collector Lambda function name"
-  value       = aws_lambda_function.event_collector.function_name
+  value       = local.event_collector.function_name
 }
 
 output "lambda_realtime_api_name" {
   description = "Realtime API Lambda function name"
-  value       = aws_lambda_function.realtime_api.function_name
+  value       = local.realtime_api.function_name
 }
 
 output "lambda_stats_api_name" {
   description = "Stats API Lambda function name"
-  value       = aws_lambda_function.stats_api.function_name
+  value       = local.stats_api.function_name
 }
 
 # API Gateway
@@ -55,7 +55,7 @@ output "cloudfront_distribution_id" {
   value       = aws_cloudfront_distribution.static_files.id
 }
 
-# 담당자 B를 위한 정보
+# Team collaboration information
 output "deployment_info" {
   description = "Deployment information for team collaboration"
   value = {
@@ -64,9 +64,9 @@ output "deployment_info" {
     events_table    = aws_dynamodb_table.events.name
     sessions_table  = aws_dynamodb_table.sessions.name
     lambda_functions = {
-      event_collector = aws_lambda_function.event_collector.function_name
-      realtime_api    = aws_lambda_function.realtime_api.function_name
-      stats_api       = aws_lambda_function.stats_api.function_name
+      event_collector = local.event_collector.function_name
+      realtime_api    = local.realtime_api.function_name
+      stats_api       = local.stats_api.function_name
     }
   }
 }

@@ -16,11 +16,14 @@ async def dashboard_page(request: Request):
 @router.get("/chart/hourly")
 async def hourly_chart():
     """시간대별 차트 데이터 (HTML 조각)"""
-    stats = await analytics_service.get_realtime_stats()
+    try:
+        stats = await analytics_service.get_realtime_stats()
+    except Exception as e:
+        return HTMLResponse('<div class="error">차트 데이터를 불러올 수 없습니다.</div>')
     hourly_data = stats.get('hourly_distribution', {})
     
     # 간단한 바 차트 HTML 생성
-    chart_html = '<div style="display: flex; align-items: end; gap: 4px; height: 200px;">'
+    chart_parts = ['<div style="display: flex; align-items: end; gap: 4px; height: 200px;">']
     
     max_value = max(hourly_data.values()) if hourly_data else 1
     
@@ -29,7 +32,7 @@ async def hourly_chart():
         value = hourly_data.get(hour_key, 0)
         height = (value / max_value * 180) if max_value > 0 else 0
         
-        chart_html += f'''
+        chart_parts.append(f'''
         <div style="
             background: #3b82f6; 
             width: 20px; 
@@ -47,23 +50,27 @@ async def hourly_chart():
                 transform-origin: left;
             ">{hour}</div>
         </div>
-        '''
+        ''')
     
-    chart_html += '</div>'
+    chart_parts.append('</div>')
+    chart_html = ''.join(chart_parts)
     return HTMLResponse(chart_html)
 
 @router.get("/popular-pages")
 async def popular_pages():
     """인기 페이지 목록 (HTML 조각)"""
-    stats = await analytics_service.get_realtime_stats()
+    try:
+        stats = await analytics_service.get_realtime_stats()
+    except Exception as e:
+        return HTMLResponse('<div class="error">페이지 데이터를 불러올 수 없습니다.</div>')
     pages = stats.get('popular_pages', [])
     
     if not pages:
         return HTMLResponse('<div class="loading">데이터가 없습니다.</div>')
     
-    html = '<div style="space-y: 8px;">'
+    html_parts = ['<div style="space-y: 8px;">']
     for i, page in enumerate(pages[:10]):
-        html += f'''
+        html_parts.append(f'''
         <div style="
             display: flex; 
             justify-content: space-between; 
@@ -83,8 +90,9 @@ async def popular_pages():
                 color: #3b82f6;
             ">{page['views']}</div>
         </div>
-        '''
-    html += '</div>'
+        ''')
+    html_parts.append('</div>')
+    html = ''.join(html_parts)
     
     return HTMLResponse(html)
 
@@ -96,7 +104,7 @@ async def recent_events():
     if not events:
         return HTMLResponse('<div class="loading">이벤트가 없습니다.</div>')
     
-    html = ''
+    html_parts = []
     for event in events[:20]:
         event_type = event.get('event_type', 'unknown')
         url = event.get('url', '')
@@ -109,7 +117,7 @@ async def recent_events():
         except:
             time_str = timestamp
         
-        html += f'''
+        html_parts.append(f'''
         <div class="event-item">
             <div>
                 <span class="event-type {event_type}">{event_type}</span>
@@ -117,6 +125,8 @@ async def recent_events():
             </div>
             <div class="event-time">{time_str}</div>
         </div>
-        '''
+        ''')
+    
+    html = ''.join(html_parts)
     
     return HTMLResponse(html)

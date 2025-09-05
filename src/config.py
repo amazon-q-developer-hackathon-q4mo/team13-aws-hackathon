@@ -21,8 +21,15 @@ class Settings(BaseSettings):
     cors_origins: list = os.getenv("CORS_ORIGINS", "*").split(",")
     
     # 성능 설정
-    max_events_per_request: int = int(os.getenv("MAX_EVENTS_PER_REQUEST", "1000"))
-    cache_ttl_seconds: int = int(os.getenv("CACHE_TTL_SECONDS", "60"))
+    max_events_per_request: int = _safe_int(os.getenv("MAX_EVENTS_PER_REQUEST", "1000"), 1000)
+    cache_ttl_seconds: int = _safe_int(os.getenv("CACHE_TTL_SECONDS", "60"), 60)
+
+def _safe_int(value: str, default: int) -> int:
+    """안전한 정수 변환"""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
     
     class Config:
         env_file = ".env"

@@ -6,7 +6,7 @@ from mangum import Mangum
 from src.config import settings
 from src.middleware.error_handler import ErrorHandlerMiddleware
 from src.utils.logger import logger
-from src.handlers import event_collector, realtime_api, stats_api, dashboard, stats_htmx
+from src.handlers import event_collector, realtime_api, stats_api, dashboard, stats_htmx, csrf_token
 
 app = FastAPI(
     title="LiveInsight API",
@@ -28,9 +28,16 @@ app.add_middleware(
 )
 
 # 정적 파일 서빙
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+try:
+    if os.path.exists("frontend/static"):
+        app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+    else:
+        logger.warning("Static files directory not found: frontend/static")
+except Exception as e:
+    logger.error(f"Failed to mount static files: {e}")
 
 # 라우터 등록
+app.include_router(csrf_token.router)
 app.include_router(event_collector.router)
 app.include_router(realtime_api.router)
 app.include_router(stats_api.router)

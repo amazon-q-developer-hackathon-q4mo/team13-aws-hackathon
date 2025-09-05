@@ -278,39 +278,141 @@
         attempt = attempt || 1;
         var self = this;
 
-        // Fetch API 또는 XMLHttpRequest 사용
+        // CSRF 토큰 가져오기
+        this.getCSRFToken(function(csrfToken) {
+            // Fetch API 또는 XMLHttpRequest 사용
+            if (window.fetch) {
+                fetch(EVENTS_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken,
+                        'X-Session-ID': self.sessionId
+                    },
+                    body: JSON.stringify({ events: events })
+                })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    console.log('LiveInsight: Events sent successfully');
+                })
+                .catch(function(error) {
+                    console.warn('LiveInsight: Failed to send events', self._sanitizeLogInput(error.message || 'Unknown error'));
+                    self.handleSendError(events, attempt);
+                });
+            } else {
+                self.fallbackXHR(events, attempt, csrfToken);
+            }
+        });
+    };
+    
+    /**
+     * CSRF 토큰 가져오기
+     */
+    LiveInsight.prototype.getCSRFToken = function(callback) {
+        var token = this.getStoredCSRFToken();
+        var self = this;
+        
+        if (token && this.isCSRFTokenValid(token)) {
+            callback(token.value);
+            return;
+        }
+        
+        // 새 토큰 요청
         if (window.fetch) {
-            fetch(EVENTS_ENDPOINT, {
+            fetch(API_BASE_URL + '/api/csrf-token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ events: events })
+                body: JSON.stringify({ session_id: this.sessionId })
             })
             .then(function(response) {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
+                if (response.ok) {
+                    return response.json();
                 }
-                console.log('LiveInsight: Events sent successfully');
+                throw new Error('Failed to get CSRF token');
+            })
+            .then(function(data) {
+                self.storeCSRFToken(data.csrf_token);
+                callback(data.csrf_token);
             })
             .catch(function(error) {
-                console.warn('LiveInsight: Failed to send events', error);
-                self.handleSendError(events, attempt);
+                console.warn('LiveInsight: Failed to get CSRF token', self._sanitizeLogInput(error.message || 'Unknown error'));
+                callback('');
             });
         } else {
-            this.fallbackXHR(events, attempt);
+            callback('');
         }
+    };
+    
+    /**
+     * CSRF 토큰 저장
+     */
+    LiveInsight.prototype.storeCSRFToken = function(token) {
+        try {
+            var tokenData = {
+                value: token,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem('liveinsight_csrf_token', JSON.stringify(tokenData));
+        } catch (e) {
+            // 무시
+        }
+    };
+    
+    /**
+     * 저장된 CSRF 토큰 가져오기
+     */
+    LiveInsight.prototype.getStoredCSRFToken = function() {
+        try {
+            var tokenData = sessionStorage.getItem('liveinsight_csrf_token');
+            return tokenData ? JSON.parse(tokenData) : null;
+        } catch (e) {
+            return null;
+        }
+    };
+    
+    /**
+     * CSRF 토큰 유효성 검사
+     */
+    LiveInsight.prototype.isCSRFTokenValid = function(tokenData) {
+        if (!tokenData || !tokenData.timestamp) return false;
+        // 1시간 유효
+        return (Date.now() - tokenData.timestamp) < 3600000;
+    };
+    
+    /**
+     * 로그 인젝션 방지를 위한 입력 정제
+     */
+    LiveInsight.prototype._sanitizeLogInput = function(input) {
+        if (typeof input !== 'string') {
+            input = String(input);
+        }
+        
+        // 개행문자 및 제어문자 제거
+        var sanitized = input.replace(/[\r\n\t]/g, ' ');
+        
+        // 길이 제한
+        if (sanitized.length > 100) {
+            sanitized = sanitized.substring(0, 97) + '...';
+        }
+        
+        return sanitized;
     };
 
     /**
      * XMLHttpRequest 폴백
      */
-    LiveInsight.prototype.fallbackXHR = function(events, attempt) {
+    LiveInsight.prototype.fallbackXHR = function(events, attempt, csrfToken) {
         var self = this;
         var xhr = new XMLHttpRequest();
         
         xhr.open('POST', EVENTS_ENDPOINT, true);
         xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRF-Token', csrfToken || '');
+        xhr.setRequestHeader('X-Session-ID', this.sessionId);
         
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {

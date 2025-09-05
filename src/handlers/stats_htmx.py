@@ -32,5 +32,12 @@ async def get_stats_html():
         
         return HTMLResponse(html)
         
+    except ConnectionError:
+        return HTMLResponse('<div class="error">데이터베이스 연결 실패</div>')
+    except TimeoutError:
+        return HTMLResponse('<div class="error">요청 시간 초과</div>')
     except Exception as e:
-        return HTMLResponse(f'<div class="error">통계 로딩 실패: {str(e)}</div>')
+        # 로그에만 상세 오류 기록, 사용자에게는 일반적인 메시지
+        import logging
+        logging.error(f"Stats loading failed: {str(e)}")
+        return HTMLResponse('<div class="error">통계 데이터를 불러올 수 없습니다.</div>')

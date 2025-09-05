@@ -1,3 +1,36 @@
+# API Gateway 공통 설정
+locals {
+  cors_headers = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  
+  cors_response_headers = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-API-Key,Authorization,X-CSRF-Token,X-Session-ID'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
+  }
+  
+  api_endpoints = {
+    events = {
+      path_part = "events"
+      method    = "POST"
+      lambda    = local.event_collector
+    }
+    realtime = {
+      path_part = "realtime"
+      method    = "GET"
+      lambda    = local.realtime_api
+    }
+    stats = {
+      path_part = "stats"
+      method    = "GET"
+      lambda    = local.stats_api
+    }
+  }
+}
+
 # API Gateway REST API
 resource "aws_api_gateway_rest_api" "liveinsight_api" {
   name        = "${var.project_name}-api-${var.environment}"
@@ -15,12 +48,10 @@ resource "aws_api_gateway_rest_api" "liveinsight_api" {
 # API Gateway Deployment
 resource "aws_api_gateway_deployment" "liveinsight_api" {
   depends_on = [
-    aws_api_gateway_method.events_post,
-    aws_api_gateway_method.realtime_get,
-    aws_api_gateway_method.stats_get,
-    aws_api_gateway_method.events_options,
-    aws_api_gateway_method.realtime_options,
-    aws_api_gateway_method.stats_options,
+    aws_api_gateway_method.endpoint_method,
+    aws_api_gateway_method.endpoint_options,
+    aws_api_gateway_integration.endpoint_integration,
+    aws_api_gateway_integration.endpoint_options,
   ]
 
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
@@ -38,93 +69,54 @@ resource "aws_api_gateway_resource" "api" {
   path_part   = "api"
 }
 
-# /api/events 리소스
-resource "aws_api_gateway_resource" "events" {
+# API 엔드포인트 리소스들 (for_each로 통합)
+resource "aws_api_gateway_resource" "endpoints" {
+  for_each = local.api_endpoints
+  
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
   parent_id   = aws_api_gateway_resource.api.id
-  path_part   = "events"
+  path_part   = each.value.path_part
 }
 
-# /api/realtime 리소스
-resource "aws_api_gateway_resource" "realtime" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  parent_id   = aws_api_gateway_resource.api.id
-  path_part   = "realtime"
-}
-
-# /api/stats 리소스
-resource "aws_api_gateway_resource" "stats" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  parent_id   = aws_api_gateway_resource.api.id
-  path_part   = "stats"
-}
-
-# POST /api/events
-resource "aws_api_gateway_method" "events_post" {
+# API 엔드포인트 메서드들 (for_each로 통합)
+resource "aws_api_gateway_method" "endpoint_method" {
+  for_each = local.api_endpoints
+  
   rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.events.id
-  http_method   = "POST"
+  resource_id   = aws_api_gateway_resource.endpoints[each.key].id
+  http_method   = each.value.method
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "events_post" {
+# API 엔드포인트 통합들 (for_each로 통합)
+resource "aws_api_gateway_integration" "endpoint_integration" {
+  for_each = local.api_endpoints
+  
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.events.id
-  http_method = aws_api_gateway_method.events_post.http_method
+  resource_id = aws_api_gateway_resource.endpoints[each.key].id
+  http_method = aws_api_gateway_method.endpoint_method[each.key].http_method
 
   integration_http_method = "POST"
   type                   = "AWS_PROXY"
-  uri                    = aws_lambda_function.event_collector.invoke_arn
+  uri                    = each.value.lambda.invoke_arn
 }
 
-# GET /api/realtime
-resource "aws_api_gateway_method" "realtime_get" {
+# CORS OPTIONS 메서드들 (for_each로 통합)
+resource "aws_api_gateway_method" "endpoint_options" {
+  for_each = local.api_endpoints
+  
   rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.realtime.id
-  http_method   = "GET"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "realtime_get" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.realtime.id
-  http_method = aws_api_gateway_method.realtime_get.http_method
-
-  integration_http_method = "POST"
-  type                   = "AWS_PROXY"
-  uri                    = aws_lambda_function.realtime_api.invoke_arn
-}
-
-# GET /api/stats
-resource "aws_api_gateway_method" "stats_get" {
-  rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.stats.id
-  http_method   = "GET"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "stats_get" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.stats.id
-  http_method = aws_api_gateway_method.stats_get.http_method
-
-  integration_http_method = "POST"
-  type                   = "AWS_PROXY"
-  uri                    = aws_lambda_function.stats_api.invoke_arn
-}
-
-# CORS OPTIONS 메서드들
-resource "aws_api_gateway_method" "events_options" {
-  rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.events.id
+  resource_id   = aws_api_gateway_resource.endpoints[each.key].id
   http_method   = "OPTIONS"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "events_options" {
+resource "aws_api_gateway_integration" "endpoint_options" {
+  for_each = local.api_endpoints
+  
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.events.id
-  http_method = aws_api_gateway_method.events_options.http_method
+  resource_id = aws_api_gateway_resource.endpoints[each.key].id
+  http_method = aws_api_gateway_method.endpoint_options[each.key].http_method
 
   type = "MOCK"
   request_templates = {
@@ -134,147 +126,35 @@ resource "aws_api_gateway_integration" "events_options" {
   }
 }
 
-resource "aws_api_gateway_method_response" "events_options" {
+resource "aws_api_gateway_method_response" "endpoint_options" {
+  for_each = local.api_endpoints
+  
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.events.id
-  http_method = aws_api_gateway_method.events_options.http_method
+  resource_id = aws_api_gateway_resource.endpoints[each.key].id
+  http_method = aws_api_gateway_method.endpoint_options[each.key].http_method
   status_code = "200"
 
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
+  response_parameters = local.cors_headers
 }
 
-resource "aws_api_gateway_integration_response" "events_options" {
+resource "aws_api_gateway_integration_response" "endpoint_options" {
+  for_each = local.api_endpoints
+  
   rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.events.id
-  http_method = aws_api_gateway_method.events_options.http_method
-  status_code = aws_api_gateway_method_response.events_options.status_code
+  resource_id = aws_api_gateway_resource.endpoints[each.key].id
+  http_method = aws_api_gateway_method.endpoint_options[each.key].http_method
+  status_code = aws_api_gateway_method_response.endpoint_options[each.key].status_code
 
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-API-Key,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
+  response_parameters = local.cors_response_headers
 }
 
-# realtime OPTIONS
-resource "aws_api_gateway_method" "realtime_options" {
-  rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.realtime.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "realtime_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.realtime.id
-  http_method = aws_api_gateway_method.realtime_options.http_method
-
-  type = "MOCK"
-  request_templates = {
-    "application/json" = jsonencode({
-      statusCode = 200
-    })
-  }
-}
-
-resource "aws_api_gateway_method_response" "realtime_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.realtime.id
-  http_method = aws_api_gateway_method.realtime_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "realtime_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.realtime.id
-  http_method = aws_api_gateway_method.realtime_options.http_method
-  status_code = aws_api_gateway_method_response.realtime_options.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-API-Key,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-}
-
-# stats OPTIONS
-resource "aws_api_gateway_method" "stats_options" {
-  rest_api_id   = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id   = aws_api_gateway_resource.stats.id
-  http_method   = "OPTIONS"
-  authorization = "NONE"
-}
-
-resource "aws_api_gateway_integration" "stats_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.stats.id
-  http_method = aws_api_gateway_method.stats_options.http_method
-
-  type = "MOCK"
-  request_templates = {
-    "application/json" = jsonencode({
-      statusCode = 200
-    })
-  }
-}
-
-resource "aws_api_gateway_method_response" "stats_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.stats.id
-  http_method = aws_api_gateway_method.stats_options.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "stats_options" {
-  rest_api_id = aws_api_gateway_rest_api.liveinsight_api.id
-  resource_id = aws_api_gateway_resource.stats.id
-  http_method = aws_api_gateway_method.stats_options.http_method
-  status_code = aws_api_gateway_method_response.stats_options.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-API-Key,Authorization'"
-    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
-}
-
-# Lambda 권한 설정
-resource "aws_lambda_permission" "api_gateway_event_collector" {
+# Lambda 권한 설정 (for_each로 통합)
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  for_each = local.api_endpoints
+  
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.event_collector.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.liveinsight_api.execution_arn}/*/*"
-}
-
-resource "aws_lambda_permission" "api_gateway_realtime_api" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.realtime_api.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.liveinsight_api.execution_arn}/*/*"
-}
-
-resource "aws_lambda_permission" "api_gateway_stats_api" {
-  statement_id  = "AllowExecutionFromAPIGateway"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.stats_api.function_name
+  function_name = each.value.lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.liveinsight_api.execution_arn}/*/*"
 }

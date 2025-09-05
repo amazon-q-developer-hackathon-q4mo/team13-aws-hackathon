@@ -26,13 +26,46 @@
             return sessionId;
         }
         
+        async getCSRFToken() {
+            let token = sessionStorage.getItem('csrf_token');
+            let tokenTime = sessionStorage.getItem('csrf_token_time');
+            
+            // 토큰이 없거나 1시간 이상 지났으면 새로 발급
+            if (!token || !tokenTime || (Date.now() - parseInt(tokenTime)) > 3600000) {
+                try {
+                    const response = await fetch(`${this.apiUrl}/api/csrf-token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ session_id: this.sessionId })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        token = data.csrf_token;
+                        sessionStorage.setItem('csrf_token', token);
+                        sessionStorage.setItem('csrf_token_time', Date.now().toString());
+                    }
+                } catch (error) {
+                    console.warn('Failed to get CSRF token:', error);
+                    return '';
+                }
+            }
+            
+            return token || '';
+        }
+        
         async sendEvent(eventData) {
             try {
+                const csrfToken = await this.getCSRFToken();
                 const response = await fetch(`${this.apiUrl}/api/v1/events/collect`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-API-Key': this.apiKey
+                        'X-API-Key': this.apiKey,
+                        'X-CSRF-Token': csrfToken,
+                        'X-Session-ID': this.sessionId
                     },
                     body: JSON.stringify({
                         session_id: this.sessionId,

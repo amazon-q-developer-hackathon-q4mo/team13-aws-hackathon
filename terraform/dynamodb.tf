@@ -34,6 +34,11 @@ resource "aws_dynamodb_table" "events" {
     enabled        = true
   }
 
+  # Point-in-Time Recovery 활성화
+  point_in_time_recovery {
+    enabled = true
+  }
+
   tags = {
     Name = "${var.project_name}-events"
   }
@@ -66,6 +71,11 @@ resource "aws_dynamodb_table" "sessions" {
     hash_key        = "is_active"
     range_key       = "last_activity"
     projection_type = "ALL"
+  }
+
+  # Point-in-Time Recovery 활성화
+  point_in_time_recovery {
+    enabled = true
   }
 
   tags = {

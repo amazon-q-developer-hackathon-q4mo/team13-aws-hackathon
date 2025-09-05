@@ -1,6 +1,6 @@
 # CloudWatch 로그 그룹 - Event Collector
 resource "aws_cloudwatch_log_group" "event_collector" {
-  name              = "/aws/lambda/${aws_lambda_function.event_collector.function_name}"
+  name              = "/aws/lambda/${local.event_collector.function_name}"
   retention_in_days = 7
 
   tags = {
@@ -10,7 +10,7 @@ resource "aws_cloudwatch_log_group" "event_collector" {
 
 # CloudWatch 로그 그룹 - Realtime API
 resource "aws_cloudwatch_log_group" "realtime_api" {
-  name              = "/aws/lambda/${aws_lambda_function.realtime_api.function_name}"
+  name              = "/aws/lambda/${local.realtime_api.function_name}"
   retention_in_days = 7
 
   tags = {
@@ -20,7 +20,7 @@ resource "aws_cloudwatch_log_group" "realtime_api" {
 
 # CloudWatch 로그 그룹 - Stats API
 resource "aws_cloudwatch_log_group" "stats_api" {
-  name              = "/aws/lambda/${aws_lambda_function.stats_api.function_name}"
+  name              = "/aws/lambda/${local.stats_api.function_name}"
   retention_in_days = 7
 
   tags = {
@@ -52,7 +52,7 @@ resource "aws_cloudwatch_metric_alarm" "event_collector_errors" {
   alarm_actions       = []
 
   dimensions = {
-    FunctionName = aws_lambda_function.event_collector.function_name
+    FunctionName = local.event_collector.function_name
   }
 
   tags = {
@@ -74,7 +74,7 @@ resource "aws_cloudwatch_metric_alarm" "realtime_api_errors" {
   alarm_actions       = []
 
   dimensions = {
-    FunctionName = aws_lambda_function.realtime_api.function_name
+    FunctionName = local.realtime_api.function_name
   }
 
   tags = {
@@ -96,7 +96,7 @@ resource "aws_cloudwatch_metric_alarm" "stats_api_errors" {
   alarm_actions       = []
 
   dimensions = {
-    FunctionName = aws_lambda_function.stats_api.function_name
+    FunctionName = local.stats_api.function_name
   }
 
   tags = {
@@ -118,7 +118,7 @@ resource "aws_cloudwatch_metric_alarm" "event_collector_duration" {
   alarm_actions       = []
 
   dimensions = {
-    FunctionName = aws_lambda_function.event_collector.function_name
+    FunctionName = local.event_collector.function_name
   }
 
   tags = {
