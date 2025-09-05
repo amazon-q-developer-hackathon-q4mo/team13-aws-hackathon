@@ -5,6 +5,7 @@ from analytics.dynamodb_client import db_client
 from datetime import datetime, timedelta
 from collections import defaultdict
 import json
+import pytz
 
 def index(request):
     return render(request, 'dashboard/index.html')
@@ -64,7 +65,7 @@ def api_hourly_stats(request):
         for event in events:
             timestamp = int(event.get('timestamp', 0))
             # UTC 타임스탬프를 서버 타임존으로 변환하여 표시
-            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
             local_time = utc_time.astimezone(timezone.get_current_timezone())
             
             # 100분 이내 데이터만 포함
@@ -172,7 +173,7 @@ def api_hourly_details(request):
         for event in events:
             timestamp = int(event.get('timestamp', 0))
             # UTC 타임스탬프를 서버 타임존으로 변환
-            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
             local_time = utc_time.astimezone(timezone.get_current_timezone())
             event_hour = local_time.strftime('%H:%M')
             
@@ -211,7 +212,7 @@ def api_page_details(request):
             if event.get('page_url') == page_url and event.get('event_type') == 'page_view':
                 timestamp = int(event.get('timestamp', 0))
                 # UTC 타임스탬프를 서버 타임존으로 변환
-                utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+                utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
                 local_time = utc_time.astimezone(timezone.get_current_timezone())
                 
                 filtered_events.append({
@@ -227,7 +228,7 @@ def api_page_details(request):
         hourly_distribution = defaultdict(int)
         for event in filtered_events:
             timestamp = int(event.get('timestamp', 0))
-            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
             local_time = utc_time.astimezone(timezone.get_current_timezone())
             hour_key = local_time.strftime('%H:00')
             hourly_distribution[hour_key] += 1
