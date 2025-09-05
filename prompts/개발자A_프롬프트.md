@@ -20,7 +20,7 @@
 
 ### 환경 변수 (반드시 사용)
 ```env
-AWS_DEFAULT_REGION=ap-northeast-2
+AWS_DEFAULT_REGION=us-east-1
 EVENTS_TABLE=LiveInsight-Events
 SESSIONS_TABLE=LiveInsight-Sessions
 ACTIVE_SESSIONS_TABLE=LiveInsight-ActiveSessions
@@ -86,7 +86,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 # 환경 변수 사용 (필수)
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 events_table = dynamodb.Table(os.environ['EVENTS_TABLE'])
 sessions_table = dynamodb.Table(os.environ['SESSIONS_TABLE'])
 active_sessions_table = dynamodb.Table(os.environ['ACTIVE_SESSIONS_TABLE'])
@@ -103,7 +103,7 @@ def lambda_handler(event, context):
 ## Phase별 작업 순서 (엄격히 준수)
 
 ### Phase 1 (1시간): 초기 설정
-1. AWS CLI 설정 (ap-northeast-2)
+1. AWS CLI 설정 (us-east-1)
 2. IAM 사용자 생성 (liveinsight-dev)
 3. DynamoDB 스키마 설계 완료
 

@@ -97,11 +97,11 @@ cat > dynamodb-policy.json << EOF
         "dynamodb:UpdateItem"
       ],
       "Resource": [
-        "arn:aws:dynamodb:ap-northeast-2:*:table/LiveInsight-Events",
-        "arn:aws:dynamodb:ap-northeast-2:*:table/LiveInsight-Sessions",
-        "arn:aws:dynamodb:ap-northeast-2:*:table/LiveInsight-ActiveSessions",
-        "arn:aws:dynamodb:ap-northeast-2:*:table/LiveInsight-Events/index/*",
-        "arn:aws:dynamodb:ap-northeast-2:*:table/LiveInsight-Sessions/index/*"
+        "arn:aws:dynamodb:us-east-1:*:table/LiveInsight-Events",
+        "arn:aws:dynamodb:us-east-1:*:table/LiveInsight-Sessions",
+        "arn:aws:dynamodb:us-east-1:*:table/LiveInsight-ActiveSessions",
+        "arn:aws:dynamodb:us-east-1:*:table/LiveInsight-Events/index/*",
+        "arn:aws:dynamodb:us-east-1:*:table/LiveInsight-Sessions/index/*"
       ]
     }
   ]

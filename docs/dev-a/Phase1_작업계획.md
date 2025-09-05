@@ -11,7 +11,7 @@ AWS 환경 설정 및 DynamoDB 테이블 스키마 설계
 aws configure
 # Access Key ID: [YOUR_ACCESS_KEY]
 # Secret Access Key: [YOUR_SECRET_KEY]
-# Default region: ap-northeast-2
+# Default region: us-east-1
 # Default output format: json
 ```
 

@@ -16,7 +16,7 @@ import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 events_table = dynamodb.Table(os.environ['EVENTS_TABLE'])
 sessions_table = dynamodb.Table(os.environ['SESSIONS_TABLE'])
 active_sessions_table = dynamodb.Table(os.environ['ACTIVE_SESSIONS_TABLE'])

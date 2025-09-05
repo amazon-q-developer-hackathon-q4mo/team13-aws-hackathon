@@ -93,7 +93,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 # AWS 설정
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_DEFAULT_REGION = 'ap-northeast-2'
+AWS_DEFAULT_REGION = 'us-east-1'
 
 # DynamoDB 테이블 설정
 EVENTS_TABLE = os.getenv('EVENTS_TABLE', 'LiveInsight-Events')

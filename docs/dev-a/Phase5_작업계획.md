@@ -222,7 +222,7 @@ aws cloudformation deploy \
   --template-file infrastructure.yaml \
   --stack-name liveinsight-infrastructure \
   --capabilities CAPABILITY_IAM \
-  --region ap-northeast-2
+  --region us-east-1
 
 # Lambda 함수 코드 업데이트
 zip -r function.zip lambda_function.py
@@ -267,7 +267,7 @@ echo "Rollback completed!"
 # LiveInsight 운영 가이드
 
 ## 모니터링
-- CloudWatch 대시보드: https://console.aws.amazon.com/cloudwatch/home?region=ap-northeast-2#dashboards:name=LiveInsight-Performance
+- CloudWatch 대시보드: https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=LiveInsight-Performance
 - 주요 메트릭:
   - Lambda Duration: 평균 응답시간
   - Lambda Errors: 에러 발생 수

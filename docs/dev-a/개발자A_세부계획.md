@@ -12,7 +12,7 @@
 **AWS 계정 설정 및 권한 구성**
 - IAM 사용자 생성 및 필요 권한 부여
 - AWS CLI 설정
-- 개발 환경 리전 설정 (ap-northeast-2)
+- 개발 환경 리전 설정 (us-east-1)
 
 **DynamoDB 테이블 스키마 설계**
 - Events 테이블 구조 확정

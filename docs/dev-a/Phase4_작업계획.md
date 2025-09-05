@@ -15,7 +15,7 @@ import json
 from datetime import datetime, timedelta
 
 # 전역 초기화 (콜드 스타트 시에만 실행)
-dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 events_table = dynamodb.Table('LiveInsight-Events')
 sessions_table = dynamodb.Table('LiveInsight-Sessions')
 active_sessions_table = dynamodb.Table('LiveInsight-ActiveSessions')
@@ -229,7 +229,7 @@ aws cloudwatch put-dashboard \
           ],
           "period": 300,
           "stat": "Average",
-          "region": "ap-northeast-2",
+          "region": "us-east-1",
           "title": "Lambda Performance"
         }
       },
@@ -242,7 +242,7 @@ aws cloudwatch put-dashboard \
           ],
           "period": 300,
           "stat": "Sum",
-          "region": "ap-northeast-2",
+          "region": "us-east-1",
           "title": "DynamoDB Capacity"
         }
       }
