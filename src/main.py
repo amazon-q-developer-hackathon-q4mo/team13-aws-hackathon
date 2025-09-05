@@ -3,18 +3,25 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from mangum import Mangum
+from src.config import settings
+from src.middleware.error_handler import ErrorHandlerMiddleware
+from src.utils.logger import logger
 from src.handlers import event_collector, realtime_api, stats_api, dashboard, stats_htmx
 
 app = FastAPI(
     title="LiveInsight API",
     description="실시간 웹 분석 서비스",
-    version="0.1.0"
+    version="0.1.0",
+    debug=settings.debug
 )
+
+# 미들웨어 설정
+app.add_middleware(ErrorHandlerMiddleware)
 
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,7 +59,12 @@ async def health_check():
         - 항상 200 OK 응답
         - AWS ALB/ELB 헬스체크에 사용 가능
     """
-    return {"status": "healthy", "service": "LiveInsight API"}
+    return {
+        "status": "healthy", 
+        "service": "LiveInsight API",
+        "environment": settings.environment,
+        "version": "0.1.0"
+    }
 
 @app.get("/")
 async def root():
@@ -86,13 +98,20 @@ async def root():
         "version": "0.1.0",
         "endpoints": [
             "/health",
-            "/api/v1/events/collect",
-            "/api/v1/realtime/stats",
-            "/api/v1/realtime/events",
-            "/api/v1/stats/sessions",
-            "/api/v1/stats/overview"
+            "/api/events",
+            "/api/realtime",
+            "/api/stats"
         ]
     }
+
+# 시작 이벤트
+@app.on_event("startup")
+async def startup_event():
+    logger.info(f"LiveInsight API starting up - Environment: {settings.environment}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("LiveInsight API shutting down")
 
 # Lambda 핸들러
 handler = Mangum(app)

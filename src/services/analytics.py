@@ -2,7 +2,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any
 from collections import defaultdict
 from src.services.dynamodb import DynamoDBService
+from src.services.cache import cache
 from src.models.sessions import SessionStats
+from src.utils.logger import logger
 
 class AnalyticsService:
     def __init__(self):
@@ -32,6 +34,16 @@ class AnalyticsService:
             - 인기 페이지는 페이지뷰 수 기준 내림차순 정렬
             - 잘못된 timestamp 형식의 이벤트는 무시됨
         """
+        cache_key = "realtime_stats"
+        
+        # 캐시에서 조회
+        cached_stats = cache.get(cache_key)
+        if cached_stats:
+            logger.debug("Returning cached realtime stats")
+            return cached_stats
+        
+        # 캐시 미스 시 새로 계산
+        logger.info("Computing new realtime stats")
         events = await self.db.get_recent_events(limit=1000)
         
         # 기본 통계 계산
@@ -58,7 +70,7 @@ class AnalyticsService:
         
         popular_pages = sorted(page_counts.items(), key=lambda x: x[1], reverse=True)[:10]
         
-        return {
+        stats = {
             'total_events': total_events,
             'page_views': page_views,
             'clicks': clicks,
@@ -66,6 +78,11 @@ class AnalyticsService:
             'popular_pages': [{'url': url, 'views': count} for url, count in popular_pages],
             'last_updated': datetime.utcnow().isoformat()
         }
+        
+        # 캐시에 저장 (30초 TTL)
+        cache.set(cache_key, stats, ttl=30)
+        
+        return stats
     
     async def get_session_analytics(self) -> SessionStats:
         """
@@ -87,11 +104,25 @@ class AnalyticsService:
             - 이탈률: 한 페이지만 보고 떠난 세션의 비율
             - 향후 실제 DB 조회 로직으로 교체 예정
         """
-        # 실제 구현에서는 DynamoDB에서 세션 데이터를 조회
-        return SessionStats(
+        cache_key = "session_analytics"
+        
+        # 캐시에서 조회
+        cached_analytics = cache.get(cache_key)
+        if cached_analytics:
+            logger.debug("Returning cached session analytics")
+            return SessionStats(**cached_analytics)
+        
+        # 캐시 미스 시 새로 계산
+        logger.info("Computing new session analytics")
+        stats = SessionStats(
             total_sessions=150,
             active_sessions=23,
             avg_duration=245.5,
             avg_page_views=3.2,
             bounce_rate=0.35
         )
+        
+        # 캐시에 저장 (60초 TTL)
+        cache.set(cache_key, stats.model_dump(), ttl=60)
+        
+        return stats

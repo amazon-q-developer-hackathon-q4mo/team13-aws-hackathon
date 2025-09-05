@@ -5,12 +5,29 @@ from typing import List, Optional, Dict, Any
 from boto3.dynamodb.conditions import Key, Attr
 from src.models.events import WebEvent
 from src.models.sessions import UserSession
+from src.config import settings
+from src.utils.logger import logger
 
 class DynamoDBService:
     def __init__(self):
-        self.dynamodb = boto3.resource('dynamodb', region_name=os.getenv('AWS_REGION', 'ap-northeast-2'))
-        self.events_table = self.dynamodb.Table(os.getenv('EVENTS_TABLE', 'liveinsight-events-dev'))
-        self.sessions_table = self.dynamodb.Table(os.getenv('SESSIONS_TABLE', 'liveinsight-sessions-dev'))
+        # AWS 자격 증명 설정
+        if settings.aws_access_key_id and settings.aws_secret_access_key:
+            self.dynamodb = boto3.resource(
+                'dynamodb',
+                region_name=settings.aws_region,
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key
+            )
+            logger.info(f"DynamoDB connected with credentials to region: {settings.aws_region}")
+        else:
+            # 기본 자격 증명 사용 (AWS CLI 또는 IAM 역할)
+            self.dynamodb = boto3.resource('dynamodb', region_name=settings.aws_region)
+            logger.info(f"DynamoDB connected with default credentials to region: {settings.aws_region}")
+        
+        self.events_table = self.dynamodb.Table(settings.events_table)
+        self.sessions_table = self.dynamodb.Table(settings.sessions_table)
+        
+        logger.info(f"Tables configured - Events: {self.events_table.name}, Sessions: {self.sessions_table.name}")
     
     async def save_event(self, event: WebEvent) -> bool:
         """
@@ -35,7 +52,6 @@ class DynamoDBService:
         """
         try:
             item = event.model_dump()
-            item['timestamp'] = item['timestamp'].isoformat()
             self.events_table.put_item(Item=item)
             return True
         except Exception as e:
@@ -65,8 +81,6 @@ class DynamoDBService:
         """
         try:
             item = session.model_dump()
-            item['start_time'] = item['start_time'].isoformat()
-            item['last_activity'] = item['last_activity'].isoformat()
             self.sessions_table.put_item(Item=item)
             return True
         except Exception as e:
@@ -99,8 +113,6 @@ class DynamoDBService:
             response = self.sessions_table.get_item(Key={'session_id': session_id})
             if 'Item' in response:
                 item = response['Item']
-                item['start_time'] = datetime.fromisoformat(item['start_time'])
-                item['last_activity'] = datetime.fromisoformat(item['last_activity'])
                 return UserSession(**item)
             return None
         except Exception as e:
@@ -131,7 +143,14 @@ class DynamoDBService:
         """
         try:
             response = self.events_table.scan(Limit=limit)
-            return response.get('Items', [])
+            events = response.get('Items', [])
+            
+            # timestamp를 문자열로 변환 (기존 코드 호환성)
+            for event in events:
+                if 'timestamp' in event:
+                    event['timestamp'] = datetime.fromtimestamp(int(event['timestamp'])).isoformat()
+            
+            return events
         except Exception as e:
             print(f"Error getting recent events: {e}")
             return []

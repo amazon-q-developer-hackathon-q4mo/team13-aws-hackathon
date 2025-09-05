@@ -3,11 +3,11 @@ from src.services.analytics import AnalyticsService
 from src.utils.response import success_response, error_response
 from src.utils.validation import validate_api_key
 
-router = APIRouter(prefix="/api/v1/stats", tags=["Statistics"])
+router = APIRouter(prefix="/api/stats", tags=["Statistics"])
 analytics_service = AnalyticsService()
 
-@router.get("/sessions")
-async def get_session_stats(_: bool = Depends(validate_api_key)):
+@router.get("")
+async def get_stats():
     """
     사용자 세션 통계 데이터를 조회하는 API 엔드포인트
     

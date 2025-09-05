@@ -5,14 +5,13 @@ from src.services.dynamodb import DynamoDBService
 from src.utils.response import success_response, error_response
 from src.utils.validation import validate_api_key, validate_event_type
 
-router = APIRouter(prefix="/api/v1/events", tags=["Events"])
+router = APIRouter(prefix="/api/events", tags=["Events"])
 db_service = DynamoDBService()
 
-@router.post("/collect")
+@router.post("")
 async def collect_event(
     event_data: dict,
-    request: Request,
-    _: bool = Depends(validate_api_key)
+    request: Request
 ):
     """
     웹 이벤트를 수집하고 처리하는 API 엔드포인트
@@ -39,8 +38,12 @@ async def collect_event(
     """
     try:
         # 클라이언트 정보 추출
-        event_data['ip_address'] = request.client.host
         event_data['user_agent'] = request.headers.get('user-agent')
+        event_data['referrer'] = request.headers.get('referer')
+        
+        # URL 필드 이름 변경
+        if 'url' in event_data:
+            event_data['page_url'] = event_data.pop('url')
         
         # 이벤트 타입 검증
         validate_event_type(event_data.get('event_type', ''))
@@ -61,7 +64,7 @@ async def collect_event(
         # 세션 업데이트
         await update_session(event)
         
-        return success_response({"event_id": event.event_id})
+        return success_response({"session_id": event.session_id, "timestamp": event.timestamp})
         
     except Exception as e:
         return error_response(f"Error processing event: {str(e)}", 500)
@@ -95,19 +98,11 @@ async def update_session(event: WebEvent):
             # 새 세션 생성
             session = UserSession(
                 session_id=event.session_id,
-                user_id=event.user_id,
-                entry_url=event.url,
                 user_agent=event.user_agent,
-                ip_address=event.ip_address
+                initial_referrer=event.referrer
             )
         
-        # 세션 통계 업데이트
-        if event.event_type == 'page_view':
-            session.page_views += 1
-        elif event.event_type == 'click':
-            session.total_clicks += 1
-        
-        session.exit_url = event.url
+        # 세션 활동 업데이트
         session.update_activity()
         
         await db_service.save_session(session)

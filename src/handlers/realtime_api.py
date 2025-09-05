@@ -3,11 +3,11 @@ from src.services.analytics import AnalyticsService
 from src.utils.response import success_response, error_response
 from src.utils.validation import validate_api_key
 
-router = APIRouter(prefix="/api/v1/realtime", tags=["Realtime"])
+router = APIRouter(prefix="/api/realtime", tags=["Realtime"])
 analytics_service = AnalyticsService()
 
-@router.get("/stats")
-async def get_realtime_stats(_: bool = Depends(validate_api_key)):
+@router.get("")
+async def get_realtime_stats():
     """
     실시간 웹사이트 통계 데이터를 조회하는 API 엔드포인트
     
@@ -43,7 +43,7 @@ async def get_realtime_stats(_: bool = Depends(validate_api_key)):
         return error_response(f"Error fetching realtime stats: {str(e)}", 500)
 
 @router.get("/events")
-async def get_recent_events(limit: int = 50, _: bool = Depends(validate_api_key)):
+async def get_recent_events(limit: int = 50):
     """
     최근 발생한 웹 이벤트 목록을 조회하는 API 엔드포인트
     
