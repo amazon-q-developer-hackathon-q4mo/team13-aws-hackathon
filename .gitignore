@@ -80,3 +80,4 @@ deployment-info.md
 *.deployment.md
 
 package/
+.env.*

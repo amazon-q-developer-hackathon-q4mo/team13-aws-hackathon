@@ -2,6 +2,13 @@ import os
 from typing import Optional
 from pydantic_settings import BaseSettings
 
+def _safe_int(value: str, default: int) -> int:
+    """안전한 정수 변환"""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
 class Settings(BaseSettings):
     # 환경 설정
     environment: str = os.getenv("ENVIRONMENT", "dev")
@@ -24,13 +31,6 @@ class Settings(BaseSettings):
     max_events_per_request: int = _safe_int(os.getenv("MAX_EVENTS_PER_REQUEST", "1000"), 1000)
     cache_ttl_seconds: int = _safe_int(os.getenv("CACHE_TTL_SECONDS", "60"), 60)
 
-def _safe_int(value: str, default: int) -> int:
-    """안전한 정수 변환"""
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
-    
     class Config:
         env_file = ".env"
 

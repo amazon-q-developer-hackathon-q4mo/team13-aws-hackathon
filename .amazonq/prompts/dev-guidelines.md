@@ -48,10 +48,16 @@ liveinsight/
 4. **에러 처리**: try-except 블록 필수
 5. **로깅**: 모든 Lambda 함수에 logging 추가
 
+## AWS 설정
+- **AWS CLI 프로필**: `hackathon`
+- **리전**: `us-east-1`
+- **설정 명령어**: `aws configure --profile hackathon`
+
 ## 환경변수 규칙
 - `EVENTS_TABLE`: Events 테이블 이름
 - `SESSIONS_TABLE`: Sessions 테이블 이름
-- `AWS_REGION`: ap-northeast-2 (서울)
+- `AWS_REGION`: us-east-1
+- `AWS_PROFILE`: hackathon
 
 ## 개발 우선순위
 ### Phase 1 (해커톤 24시간)
@@ -80,8 +86,10 @@ liveinsight/
 ## 배포 규칙
 - Terraform으로 인프라 관리
 - 환경: dev (개발), prod (운영)
-- 리전: ap-northeast-2 (서울)
+- 리전: us-east-1
+- AWS 프로필: hackathon
 - 네이밍: `liveinsight-{resource}-{environment}`
+- 배포 전 프로필 확인: `export AWS_PROFILE=hackathon`
 
 ## 테스트 규칙
 - 단위 테스트: pytest 사용
