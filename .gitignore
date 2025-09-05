@@ -40,6 +40,10 @@ staticfiles/
 
 # Environment variables
 .env
+*.env
+.env.*
+src/.env
+src/.env.*
 .env.local
 .env.production
 .venv
@@ -89,3 +93,4 @@ logs/
 # Temporary files
 tmp/
 temp/
+
