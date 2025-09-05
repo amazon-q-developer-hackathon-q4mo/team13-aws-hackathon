@@ -48,3 +48,8 @@ credentials/
 keys/
 *.pem
 *.key
+
+# Deployment info (contains sensitive data)
+DEPLOYMENT_INFO.md
+deployment-info.md
+*.deployment.md
