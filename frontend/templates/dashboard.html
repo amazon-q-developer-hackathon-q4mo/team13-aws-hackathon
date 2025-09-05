@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveInsight Dashboard</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <header class="header">
+        <h1>📊 LiveInsight Dashboard</h1>
+    </header>
+
+    <div class="container">
+        <!-- 실시간 통계 카드 -->
+        <div class="stats-grid" 
+             hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
+             hx-trigger="load, every 5s"
+             hx-target="#stats-content">
+            <div id="stats-content">
+                <div class="loading">통계 로딩 중...</div>
+            </div>
+        </div>
+
+        <!-- 시간대별 이벤트 차트 -->
+        <div class="chart-container">
+            <h2 class="chart-title">시간대별 이벤트 분포</h2>
+            <div id="hourly-chart" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/stats" 
+                 hx-trigger="load, every 10s">
+                <div class="loading">차트 로딩 중...</div>
+            </div>
+        </div>
+
+        <!-- 인기 페이지 -->
+        <div class="chart-container">
+            <h2 class="chart-title">인기 페이지</h2>
+            <div id="popular-pages" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/stats" 
+                 hx-trigger="load, every 10s">
+                <div class="loading">데이터 로딩 중...</div>
+            </div>
+        </div>
+
+        <!-- 최근 이벤트 -->
+        <div class="events-list">
+            <div class="events-header">
+                최근 이벤트
+                <button class="refresh-btn" 
+                        hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
+                        hx-target="#events-content">
+                    새로고침
+                </button>
+            </div>
+            <div id="events-content" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
+                 hx-trigger="load, every 3s">
+                <div class="loading">이벤트 로딩 중...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // HTMX 이벤트 리스너
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            console.error('HTMX Error:', evt.detail);
+        });
+
+        // 실시간 업데이트 상태 표시
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            const target = evt.target;
+            if (target.id === 'stats-content') {
+                // 통계 업데이트 중 표시 (선택사항)
+            }
+        });
+    </script>
+</body>
+</html>
