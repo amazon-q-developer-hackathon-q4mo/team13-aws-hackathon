@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.utils import timezone
 from analytics.dynamodb_client import db_client
+from datetime import datetime, timedelta
+from collections import defaultdict
 import json
 
 def index(request):
@@ -44,16 +47,37 @@ def api_hourly_stats(request):
         events = db_client.get_hourly_stats(hours)
         
         # 시간대별 집계
-        from collections import defaultdict
-        from datetime import datetime
-        
         hourly_counts = defaultdict(int)
+        
+        # 서버 타임존 기준 현재 시간
+        now = timezone.now()
+        hours_range = []
+        
+        # 100분 전부터 현재까지 5분 간격으로 라벨 생성 (20개 포인트)
+        for i in range(20):
+            time_point = now - timedelta(minutes=(19 - i) * 5)
+            time_key = time_point.strftime('%H:%M')
+            hours_range.append(time_key)
+            hourly_counts[time_key] = 0
+        
+        # 실제 이벤트 데이터로 카운트 업데이트
         for event in events:
             timestamp = int(event.get('timestamp', 0))
-            hour = datetime.fromtimestamp(timestamp / 1000).strftime('%m-%d %H:00')
-            hourly_counts[hour] += 1
+            # UTC 타임스탬프를 서버 타임존으로 변환하여 표시
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            local_time = utc_time.astimezone(timezone.get_current_timezone())
+            
+            # 100분 이내 데이터만 포함
+            if (now - local_time).total_seconds() <= 100 * 60:
+                # 이벤트 시간을 5분 단위로 맞춤
+                minute_slot = (local_time.minute // 5) * 5
+                event_rounded = local_time.replace(minute=minute_slot, second=0, microsecond=0)
+                time_key = event_rounded.strftime('%H:%M')
+                if time_key in hourly_counts:
+                    hourly_counts[time_key] += 1
         
-        result = [{'hour': k, 'count': v} for k, v in sorted(hourly_counts.items())]
+        # 최근 20개 포인트만 반환 (현재 시간이 마지막)
+        result = [{'hour': hour_key, 'count': hourly_counts[hour_key]} for hour_key in hours_range[-20:]]
         return JsonResponse(result, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -133,9 +157,93 @@ def api_referrer_stats(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def api_hourly_details(request):
+    """특정 시간대 상세 데이터 API"""
+    try:
+        hour = request.GET.get('hour')  # 'HH:MM' 형식
+        if not hour:
+            return JsonResponse({'error': 'hour parameter required'}, status=400)
+        
+        # 해당 시간대의 이벤트 조회
+        events = db_client.get_hourly_stats(24)
+        
+        # 해당 시간대 필터링
+        filtered_events = []
+        for event in events:
+            timestamp = int(event.get('timestamp', 0))
+            # UTC 타임스탬프를 서버 타임존으로 변환
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            local_time = utc_time.astimezone(timezone.get_current_timezone())
+            event_hour = local_time.strftime('%H:%M')
+            
+            if event_hour == hour:
+                filtered_events.append({
+                    'event_id': event.get('event_id'),
+                    'user_id': event.get('user_id'),
+                    'session_id': event.get('session_id'),
+                    'event_type': event.get('event_type'),
+                    'page_url': event.get('page_url'),
+                    'timestamp': event.get('timestamp'),
+                    'formatted_time': local_time.strftime('%H:%M:%S')
+                })
+        
+        return JsonResponse({
+            'hour': hour,
+            'total_events': len(filtered_events),
+            'events': filtered_events[:20]  # 최대 20개만 반환
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def api_page_details(request):
+    """특정 페이지 상세 데이터 API"""
+    try:
+        page_url = request.GET.get('page')
+        if not page_url:
+            return JsonResponse({'error': 'page parameter required'}, status=400)
+        
+        # 해당 페이지의 이벤트 조회
+        events = db_client.get_hourly_stats(24)
+        
+        # 해당 페이지 필터링
+        filtered_events = []
+        for event in events:
+            if event.get('page_url') == page_url and event.get('event_type') == 'page_view':
+                timestamp = int(event.get('timestamp', 0))
+                # UTC 타임스탬프를 서버 타임존으로 변환
+                utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+                local_time = utc_time.astimezone(timezone.get_current_timezone())
+                
+                filtered_events.append({
+                    'event_id': event.get('event_id'),
+                    'user_id': event.get('user_id'),
+                    'session_id': event.get('session_id'),
+                    'timestamp': event.get('timestamp'),
+                    'formatted_time': local_time.strftime('%H:%M:%S'),
+                    'referrer': event.get('referrer', '')
+                })
+        
+        # 시간대별 분포
+        hourly_distribution = defaultdict(int)
+        for event in filtered_events:
+            timestamp = int(event.get('timestamp', 0))
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
+            local_time = utc_time.astimezone(timezone.get_current_timezone())
+            hour_key = local_time.strftime('%H:00')
+            hourly_distribution[hour_key] += 1
+        
+        return JsonResponse({
+            'page_url': page_url,
+            'total_views': len(filtered_events),
+            'recent_events': filtered_events[:10],  # 최근 10개
+            'hourly_distribution': dict(hourly_distribution)
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 def calculate_duration(last_activity):
     if not last_activity:
         return 0
-    from datetime import datetime
-    current_time = int(datetime.now().timestamp() * 1000)
+    # UTC 기준으로 계산 (저장된 데이터가 UTC이므로)
+    current_time = int(timezone.now().timestamp() * 1000)
     return max(0, current_time - int(last_activity))

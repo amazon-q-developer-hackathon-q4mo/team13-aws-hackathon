@@ -36,10 +36,13 @@ class DynamoDBClient:
             return []
     
     def get_hourly_stats(self, hours=24):
-        # 시간대별 통계 조회 (간단한 구현)
+        # 시간대별 통계 조회 (UTC 기준)
         try:
-            from datetime import datetime, timedelta
-            end_time = datetime.now()
+            from django.utils import timezone
+            from datetime import timedelta
+            
+            # UTC 기준으로 시간 범위 계산
+            end_time = timezone.now()
             start_time = end_time - timedelta(hours=hours)
             
             response = self.events_table.scan(
