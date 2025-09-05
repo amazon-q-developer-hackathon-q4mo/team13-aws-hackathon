@@ -9,16 +9,15 @@ Django 프로젝트 설정 및 개발 환경 구성
 
 **Django 프로젝트 생성**
 ```bash
-# 가상환경 생성 및 활성화
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+# uv로 프로젝트 초기화 및 가상환경 생성
+uv init --python 3.11
+uv add django djangorestframework django-cors-headers boto3 python-dotenv
 
 # Django 프로젝트 생성
-pip install django djangorestframework django-cors-headers boto3
-django-admin startproject liveinsight .
+uv run django-admin startproject liveinsight .
 cd liveinsight
-python manage.py startapp analytics
-python manage.py startapp dashboard
+uv run python manage.py startapp analytics
+uv run python manage.py startapp dashboard
 ```
 
 **프로젝트 구조**
@@ -45,16 +44,29 @@ liveinsight/
     └── libs/
 ```
 
-**requirements.txt 작성**
-```txt
-Django==4.2.7
-djangorestframework==3.14.0
-django-cors-headers==4.3.1
-boto3==1.29.7
-python-dotenv==1.0.0
+**pyproject.toml 의존성 (uv가 자동 생성)**
+```toml
+[project]
+dependencies = [
+    "django>=4.2.7",
+    "djangorestframework>=3.14.0",
+    "django-cors-headers>=4.3.1",
+    "boto3>=1.29.7",
+    "python-dotenv>=1.0.0",
+]
 ```
 
 ### 2. 개발 환경 구성 (30분)
+
+**uv 사용 명령어**
+```bash
+# 개발 서버 실행
+uv run python manage.py runserver
+
+# 마이그레이션
+uv run python manage.py makemigrations
+uv run python manage.py migrate
+```
 
 **settings.py 기본 설정**
 ```python
@@ -133,7 +145,7 @@ urlpatterns = [
 
 ## 완료 기준
 - [ ] Django 프로젝트 생성 완료
-- [ ] 가상환경 설정 및 패키지 설치
+- [ ] uv로 가상환경 및 패키지 설정
 - [ ] 기본 앱 구조 생성 (analytics, dashboard)
 - [ ] settings.py 기본 설정 완료
 - [ ] URL 라우팅 구조 설정

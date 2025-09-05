@@ -7,24 +7,47 @@
 terraform.tfplan
 terraform.tfplan.*
 
-# AWS
-.aws/
-aws-exports.js
-
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+.coverage
+
+# Environment variables
+.env
+.env.local
+.env.production
+.venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-*.egg-info/
-dist/
-build/
 
 # Lambda deployment packages
 *.zip
@@ -37,7 +60,7 @@ lambda_function.zip
 *.swo
 *~
 
-# OS
+# macOS
 .DS_Store
 .DS_Store?
 ._*
@@ -46,27 +69,22 @@ lambda_function.zip
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
-
-# Environment variables
-.env
-.env.local
-.env.production
-
 # Node.js (for frontend)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Django (for dev-b)
-*.pyc
-db.sqlite3
-media/
-staticfiles/
-.coverage
+# uv
+.python-version
+package/
+
+# AWS
+.aws/
+aws-exports.js
+
+# Logs
+logs/
 
 # Temporary files
 tmp/
