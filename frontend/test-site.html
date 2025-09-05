@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테스트 웹사이트 - LiveInsight</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        .button { background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px; }
+        .button:hover { background: #2563eb; }
+        .section { margin: 2rem 0; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>LiveInsight 테스트 사이트</h1>
+    
+    <div class="section">
+        <h2>버튼 테스트</h2>
+        <button class="button" id="btn1">버튼 1</button>
+        <button class="button" id="btn2">버튼 2</button>
+        <button class="button" id="btn3">버튼 3</button>
+    </div>
+    
+    <div class="section">
+        <h2>링크 테스트</h2>
+        <a href="#section1">섹션 1로 이동</a> |
+        <a href="#section2">섹션 2로 이동</a> |
+        <a href="https://example.com" target="_blank">외부 링크</a>
+    </div>
+    
+    <div class="section" id="section1">
+        <h2>섹션 1</h2>
+        <p>이것은 테스트 섹션입니다. 클릭 이벤트를 테스트할 수 있습니다.</p>
+        <button class="button">섹션 1 버튼</button>
+    </div>
+    
+    <div class="section" id="section2">
+        <h2>섹션 2</h2>
+        <p>또 다른 테스트 섹션입니다.</p>
+        <button class="button">섹션 2 버튼</button>
+    </div>
+
+    <!-- LiveInsight 추적 스크립트 -->
+    <script>
+        // 설정
+        window.liveinsightConfig = {
+            apiUrl: 'http://localhost:8000',
+            apiKey: 'dev-api-key-12345',
+            userId: 'test-user-123'
+        };
+    </script>
+    <script src="/static/js/liveinsight-tracker.js"></script>
+    
+    <script>
+        // 추가 테스트 이벤트
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('LiveInsight 테스트 사이트 로드됨');
+            
+            // 5초 후 자동 클릭 시뮬레이션 (테스트용)
+            setTimeout(() => {
+                console.log('자동 테스트 이벤트 생성 중...');
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
