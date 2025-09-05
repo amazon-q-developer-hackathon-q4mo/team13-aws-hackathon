@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>실시간 활성 세션</h2>
+        <div id="active-sessions">
+            <!-- 활성 세션 목록 -->
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <h3>시간대별 유입</h3>
+        <canvas id="hourlyChart"></canvas>
+    </div>
+    <div class="col-md-6">
+        <h3>페이지별 조회수</h3>
+        <canvas id="pageChart"></canvas>
+    </div>
+</div>
+
+<script>
+// TODO: 차트 초기화 및 데이터 로딩
+</script>
+{% endblock %}
