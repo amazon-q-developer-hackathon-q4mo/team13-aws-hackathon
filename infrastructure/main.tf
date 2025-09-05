@@ -189,6 +189,25 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
+# CloudWatch 메트릭 정책
+resource "aws_iam_role_policy" "lambda_cloudwatch" {
+  name = "LiveInsight-CloudWatch-Policy"
+  role = aws_iam_role.lambda_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # Lambda 함수
 resource "aws_lambda_function" "event_collector" {
   filename         = "lambda_function.zip"

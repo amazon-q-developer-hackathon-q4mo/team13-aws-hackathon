@@ -2,17 +2,27 @@ import json
 import boto3
 import os
 import uuid
+import logging
+import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 from botocore.exceptions import ClientError
 
-# 환경 변수 사용 (필수)
+# 로거 설정
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# 전역 초기화 (콜드 스타트 최소화)
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+cloudwatch = boto3.client('cloudwatch')
 events_table = dynamodb.Table(os.environ['EVENTS_TABLE'])
 sessions_table = dynamodb.Table(os.environ['SESSIONS_TABLE'])
 active_sessions_table = dynamodb.Table(os.environ['ACTIVE_SESSIONS_TABLE'])
 
 def lambda_handler(event, context):
+    start_time = time.time()
+    request_id = context.aws_request_id
+    
     # CORS 헤더 필수
     headers = {
         'Access-Control-Allow-Origin': '*',
@@ -21,8 +31,11 @@ def lambda_handler(event, context):
     }
     
     try:
+        log_event('INFO', 'Event processing started', request_id=request_id)
+        
         # OPTIONS 요청 처리
         if event['httpMethod'] == 'OPTIONS':
+            log_event('INFO', 'CORS preflight request', request_id=request_id)
             return {
                 'statusCode': 200,
                 'headers': headers,
@@ -42,6 +55,17 @@ def lambda_handler(event, context):
             # 데이터 저장
             save_event_data(event_data, session_data)
             
+            # 메트릭 전송
+            processing_time = time.time() - start_time
+            put_custom_metric('EventsProcessed', 1)
+            put_custom_metric('ProcessingTime', processing_time * 1000, 'Milliseconds')
+            
+            log_event('INFO', 'Event processed successfully',
+                     event_id=event_data['event_id'],
+                     session_id=event_data['session_id'],
+                     processing_time=processing_time,
+                     request_id=request_id)
+            
             return {
                 'statusCode': 200,
                 'headers': headers,
@@ -53,7 +77,14 @@ def lambda_handler(event, context):
             }
             
     except Exception as e:
-        print(f"Error: {str(e)}")
+        processing_time = time.time() - start_time
+        put_custom_metric('ProcessingErrors', 1)
+        
+        log_event('ERROR', 'Event processing failed',
+                 error=str(e),
+                 processing_time=processing_time,
+                 request_id=request_id)
+        
         return {
             'statusCode': 500,
             'headers': headers,
@@ -166,19 +197,71 @@ def update_active_session(session_data):
         print(f"Active session update error: {e}")
 
 def save_event_data(event_data, session_data):
-    """이벤트 및 세션 데이터 저장"""
+    """이벤트 및 세션 데이터 저장 (재시도 로직 포함)"""
     try:
         # 이벤트 저장
-        events_table.put_item(Item=convert_to_dynamodb_format(event_data))
+        safe_dynamodb_operation(
+            lambda: events_table.put_item(Item=convert_to_dynamodb_format(event_data))
+        )
         
         # 세션 저장
-        sessions_table.put_item(Item=convert_to_dynamodb_format(session_data))
+        safe_dynamodb_operation(
+            lambda: sessions_table.put_item(Item=convert_to_dynamodb_format(session_data))
+        )
         
-        print(f"Saved event: {event_data['event_id']}, session: {session_data['session_id']}")
+        log_event('DEBUG', 'Data saved successfully',
+                 event_id=event_data['event_id'],
+                 session_id=session_data['session_id'])
         
-    except ClientError as e:
-        print(f"Save error: {e}")
+    except Exception as e:
+        log_event('ERROR', 'Save operation failed', error=str(e))
         raise e
+
+def log_event(level, message, **kwargs):
+    """구조화된 로깅"""
+    log_data = {
+        'timestamp': datetime.now().isoformat(),
+        'level': level,
+        'message': message,
+        **kwargs
+    }
+    logger.info(json.dumps(log_data))
+
+def put_custom_metric(metric_name, value, unit='Count'):
+    """사용자 정의 CloudWatch 메트릭 전송"""
+    try:
+        cloudwatch.put_metric_data(
+            Namespace='LiveInsight',
+            MetricData=[
+                {
+                    'MetricName': metric_name,
+                    'Value': value,
+                    'Unit': unit,
+                    'Dimensions': [
+                        {
+                            'Name': 'Environment',
+                            'Value': 'Production'
+                        }
+                    ]
+                }
+            ]
+        )
+    except Exception as e:
+        logger.error(f"Failed to send metric {metric_name}: {str(e)}")
+
+def safe_dynamodb_operation(operation, max_retries=3):
+    """안전한 DynamoDB 작업 (재시도 로직)"""
+    for attempt in range(max_retries):
+        try:
+            return operation()
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ProvisionedThroughputExceededException':
+                wait_time = 2 ** attempt
+                logger.warning(f"Throttled, retrying in {wait_time}s (attempt {attempt + 1})")
+                time.sleep(wait_time)
+                continue
+            raise e
+    raise Exception(f"Max retries ({max_retries}) exceeded")
 
 def convert_to_dynamodb_format(data):
     """Python 데이터를 DynamoDB 형식으로 변환"""
