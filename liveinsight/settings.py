@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "drf_spectacular",
     "analytics",
     "dashboard",
 ]
@@ -145,6 +146,15 @@ ACTIVE_SESSIONS_TABLE = os.getenv('ACTIVE_SESSIONS_TABLE', 'LiveInsight-ActiveSe
 
 # DRF 설정
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20
+}
+
+# Swagger 설정
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'LiveInsight API',
+    'DESCRIPTION': 'Real-time web analytics API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
