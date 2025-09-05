@@ -1,8 +1,9 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from mangum import Mangum
-from src.handlers import event_collector, realtime_api, stats_api
+from src.handlers import event_collector, realtime_api, stats_api, dashboard, stats_htmx
 
 app = FastAPI(
     title="LiveInsight API",
@@ -19,10 +20,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 정적 파일 서빙
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+
 # 라우터 등록
 app.include_router(event_collector.router)
 app.include_router(realtime_api.router)
 app.include_router(stats_api.router)
+app.include_router(dashboard.router)
+app.include_router(stats_htmx.router)
 
 @app.get("/health")
 async def health_check():
