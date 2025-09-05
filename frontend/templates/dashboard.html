@@ -15,7 +15,7 @@
     <div class="container">
         <!-- 실시간 통계 카드 -->
         <div class="stats-grid" 
-             hx-get="/api/v1/realtime/stats" 
+             hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
              hx-trigger="load, every 5s"
              hx-target="#stats-content">
             <div id="stats-content">
@@ -27,7 +27,7 @@
         <div class="chart-container">
             <h2 class="chart-title">시간대별 이벤트 분포</h2>
             <div id="hourly-chart" 
-                 hx-get="/dashboard/chart/hourly" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/stats" 
                  hx-trigger="load, every 10s">
                 <div class="loading">차트 로딩 중...</div>
             </div>
@@ -37,7 +37,7 @@
         <div class="chart-container">
             <h2 class="chart-title">인기 페이지</h2>
             <div id="popular-pages" 
-                 hx-get="/dashboard/popular-pages" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/stats" 
                  hx-trigger="load, every 10s">
                 <div class="loading">데이터 로딩 중...</div>
             </div>
@@ -48,13 +48,13 @@
             <div class="events-header">
                 최근 이벤트
                 <button class="refresh-btn" 
-                        hx-get="/dashboard/recent-events" 
+                        hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
                         hx-target="#events-content">
                     새로고침
                 </button>
             </div>
             <div id="events-content" 
-                 hx-get="/dashboard/recent-events" 
+                 hx-get="https://k2eb4xeb24.execute-api.us-east-1.amazonaws.com/dev/api/realtime" 
                  hx-trigger="load, every 3s">
                 <div class="loading">이벤트 로딩 중...</div>
             </div>
