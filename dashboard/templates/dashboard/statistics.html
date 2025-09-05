@@ -179,11 +179,22 @@ async function loadStatistics() {
 }
 
 async function loadSummaryStats() {
-    // TODO: 실제 API 연동
-    document.getElementById('total-sessions').textContent = '1,234';
-    document.getElementById('total-events').textContent = '5,678';
-    document.getElementById('avg-session-time').textContent = '3분 45초';
-    document.getElementById('conversion-rate').textContent = '2.3%';
+    try {
+        const response = await fetch('/api/statistics/summary/');
+        const data = await response.json();
+        
+        document.getElementById('total-sessions').textContent = data.total_sessions;
+        document.getElementById('total-events').textContent = data.total_events;
+        document.getElementById('avg-session-time').textContent = data.avg_session_time;
+        document.getElementById('conversion-rate').textContent = data.conversion_rate;
+    } catch (error) {
+        console.error('Error loading summary stats:', error);
+        // 에러 시 기본값 표시
+        document.getElementById('total-sessions').textContent = '0';
+        document.getElementById('total-events').textContent = '0';
+        document.getElementById('avg-session-time').textContent = '0분 0초';
+        document.getElementById('conversion-rate').textContent = '0.0%';
+    }
 }
 
 async function loadHourlyChart(hours) {
@@ -219,10 +230,20 @@ async function loadPageChart() {
 }
 
 async function loadReferrerChart() {
-    // TODO: 유입 경로 데이터 로드
-    referrerChart.data.labels = ['Google', 'Direct', 'Facebook', 'Twitter'];
-    referrerChart.data.datasets[0].data = [45, 30, 15, 10];
-    referrerChart.update();
+    try {
+        const response = await fetch('/api/statistics/referrers/');
+        const data = await response.json();
+        
+        referrerChart.data.labels = data.labels;
+        referrerChart.data.datasets[0].data = data.data;
+        referrerChart.update();
+    } catch (error) {
+        console.error('Error loading referrer chart:', error);
+        // 에러 시 기본 데이터 표시
+        referrerChart.data.labels = ['No Data'];
+        referrerChart.data.datasets[0].data = [0];
+        referrerChart.update();
+    }
 }
 </script>
 {% endblock %}

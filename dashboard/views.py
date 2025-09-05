@@ -66,6 +66,73 @@ def api_page_stats(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def api_summary_stats(request):
+    """요약 통계 API"""
+    try:
+        # 활성 세션 수
+        active_sessions = db_client.get_active_sessions()
+        total_sessions = len(active_sessions)
+        
+        # 총 이벤트 수 (최근 24시간)
+        events = db_client.get_hourly_stats(24)
+        total_events = len(events)
+        
+        # 평균 세션 시간 계산
+        if active_sessions:
+            total_duration = sum(calculate_duration(s.get('last_activity')) for s in active_sessions)
+            avg_duration = total_duration / len(active_sessions)
+            avg_minutes = int(avg_duration / 60000)
+            avg_seconds = int((avg_duration % 60000) / 1000)
+            avg_session_time = f"{avg_minutes}분 {avg_seconds}초"
+        else:
+            avg_session_time = "0분 0초"
+        
+        # 전환율 계산
+        conversion_events = [e for e in events if e.get('event_type') == 'conversion']
+        conversion_rate = f"{(len(conversion_events) / max(total_events, 1) * 100):.1f}%" if total_events > 0 else "0.0%"
+        
+        return JsonResponse({
+            'total_sessions': f"{total_sessions:,}",
+            'total_events': f"{total_events:,}",
+            'avg_session_time': avg_session_time,
+            'conversion_rate': conversion_rate
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def api_referrer_stats(request):
+    """유입 경로 통계 API"""
+    try:
+        events = db_client.get_hourly_stats(168)  # 7일간 데이터
+        
+        # 리퍼러별 집계
+        referrer_counts = {}
+        for event in events:
+            if event.get('event_type') == 'page_view':
+                referrer = event.get('referrer', '')
+                if not referrer:
+                    referrer = 'Direct'
+                elif 'google' in referrer.lower():
+                    referrer = 'Google'
+                elif 'facebook' in referrer.lower():
+                    referrer = 'Facebook'
+                elif 'twitter' in referrer.lower():
+                    referrer = 'Twitter'
+                else:
+                    referrer = 'Other'
+                
+                referrer_counts[referrer] = referrer_counts.get(referrer, 0) + 1
+        
+        # 상위 5개 리퍼러
+        sorted_referrers = sorted(referrer_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        return JsonResponse({
+            'labels': [item[0] for item in sorted_referrers],
+            'data': [item[1] for item in sorted_referrers]
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 def calculate_duration(last_activity):
     if not last_activity:
         return 0

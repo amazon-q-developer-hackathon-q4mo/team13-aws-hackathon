@@ -9,4 +9,6 @@ urlpatterns = [
     path('api/sessions/<str:session_id>/events/', views.api_session_events, name='api_session_events'),
     path('api/statistics/hourly/', views.api_hourly_stats, name='api_hourly_stats'),
     path('api/statistics/pages/', views.api_page_stats, name='api_page_stats'),
+    path('api/statistics/summary/', views.api_summary_stats, name='api_summary_stats'),
+    path('api/statistics/referrers/', views.api_referrer_stats, name='api_referrer_stats'),
 ]
