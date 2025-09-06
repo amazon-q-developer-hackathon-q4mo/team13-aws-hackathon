@@ -1,15 +1,4 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
+# 기본 provider는 루트 모듈에서 설정됨
 
 # VPC 및 네트워킹
 resource "aws_vpc" "main" {
@@ -224,7 +213,7 @@ resource "aws_lb_listener" "app" {
 
 # ECR
 resource "aws_ecr_repository" "app" {
-  name                 = "${var.project_name}-app"
+  name                 = "${lower(var.project_name)}-app"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {

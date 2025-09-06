@@ -22,6 +22,7 @@ resource "aws_xray_sampling_rule" "liveinsight_sampling" {
   http_method    = "*"
   service_name   = "liveinsight"
   service_type   = "*"
+  resource_arn   = "*"
 }
 
 # 고급 CloudWatch 알람
@@ -90,7 +91,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_throttles" {
 resource "aws_cloudwatch_log_metric_filter" "events_processed" {
   name           = "EventsProcessed"
   log_group_name = var.lambda_log_group_name
-  pattern        = "[timestamp, request_id, \"EVENT_PROCESSED\", ...]"
+  pattern        = "[timestamp, request_id, EVENT_PROCESSED, ...]"
 
   metric_transformation {
     name      = "EventsProcessed"
@@ -102,7 +103,7 @@ resource "aws_cloudwatch_log_metric_filter" "events_processed" {
 resource "aws_cloudwatch_log_metric_filter" "processing_time" {
   name           = "ProcessingTime"
   log_group_name = var.lambda_log_group_name
-  pattern        = "[timestamp, request_id, \"PROCESSING_TIME\", duration]"
+  pattern        = "[timestamp, request_id, PROCESSING_TIME, duration]"
 
   metric_transformation {
     name      = "ProcessingTime"

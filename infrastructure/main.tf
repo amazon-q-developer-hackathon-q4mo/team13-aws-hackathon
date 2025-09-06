@@ -338,3 +338,25 @@ resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   stage_name  = "prod"
 }
+
+# Django 웹 애플리케이션 모듈
+module "web_app" {
+  source = "./web-app"
+  
+  aws_region   = var.aws_region
+  project_name = var.project_name
+  environment  = var.environment
+}
+
+# Phase 7: 고급 모니터링 모듈
+module "advanced_monitoring" {
+  source = "./monitoring"
+  
+  aws_region             = var.aws_region
+  alb_arn_suffix         = module.web_app.alb_arn_suffix
+  lambda_function_name   = aws_lambda_function.event_collector.function_name
+  lambda_log_group_name  = "/aws/lambda/${aws_lambda_function.event_collector.function_name}"
+  events_table_name      = aws_dynamodb_table.events.name
+  ecs_service_name       = module.web_app.ecs_service_name
+  ecs_cluster_name       = module.web_app.ecs_cluster_name
+}

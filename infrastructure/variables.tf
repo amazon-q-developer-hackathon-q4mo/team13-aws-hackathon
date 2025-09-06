@@ -15,3 +15,9 @@ variable "project_name" {
   type        = string
   default     = "LiveInsight"
 }
+
+variable "enable_web_app" {
+  description = "Enable Django web application deployment"
+  type        = bool
+  default     = true
+}
