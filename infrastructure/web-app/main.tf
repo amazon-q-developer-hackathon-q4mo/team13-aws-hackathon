@@ -379,6 +379,19 @@ resource "null_resource" "docker_build" {
   depends_on = [aws_ecr_repository.app]
 }
 
+# 정적 파일 S3 업로드
+resource "null_resource" "static_files_upload" {
+  triggers = {
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = "cd .. && aws s3 sync src/static/ s3://${var.static_files_bucket}/static/ --delete"
+  }
+
+  depends_on = [null_resource.docker_build]
+}
+
 # ECS 태스크 정의
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.project_name}-task"
@@ -453,7 +466,7 @@ resource "aws_ecs_task_definition" "app" {
     Name = "${var.project_name}-task"
   }
 
-  depends_on = [null_resource.docker_build]
+  depends_on = [null_resource.docker_build, null_resource.static_files_upload]
 }
 
 # ECS 서비스
@@ -481,6 +494,24 @@ resource "aws_ecs_service" "app" {
   tags = {
     Name = "${var.project_name}-service"
   }
+
+  # 태스크 정의 변경 시 자동 업데이트
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+}
+
+# ECS 서비스 업데이트
+resource "null_resource" "ecs_service_update" {
+  triggers = {
+    task_definition = aws_ecs_task_definition.app.arn
+  }
+
+  provisioner "local-exec" {
+    command = "aws ecs update-service --cluster ${aws_ecs_cluster.main.name} --service ${aws_ecs_service.app.name} --task-definition ${aws_ecs_task_definition.app.arn} --region ${var.aws_region}"
+  }
+
+  depends_on = [aws_ecs_task_definition.app, aws_ecs_service.app]
 }
 
 # Auto Scaling

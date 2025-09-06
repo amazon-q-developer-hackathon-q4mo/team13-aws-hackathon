@@ -51,7 +51,7 @@ output "web_app_url" {
 
 output "web_app_dashboard_url" {
   description = "Django dashboard URL"
-  value       = "http://${module.web_app.alb_dns_name}/dashboard/"
+  value       = "http://${module.web_app.alb_dns_name}/"
 }
 
 output "cloudwatch_dashboard_url" {
