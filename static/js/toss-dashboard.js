@@ -25,8 +25,17 @@ class TossDashboard {
     init() {
         this.initializeCharts();
         this.setupEventListeners();
+        this.initializeTooltips();
         this.startDataPolling();
         this.showWelcomeAnimation();
+    }
+    
+    initializeTooltips() {
+        // Bootstrap 툴팁 초기화
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
     
     showWelcomeAnimation() {

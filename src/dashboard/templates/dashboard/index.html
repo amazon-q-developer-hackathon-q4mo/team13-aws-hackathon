@@ -29,7 +29,13 @@
         <div class="card stats-card fade-in">
             <div class="card-body position-relative">
                 <div class="stats-number" id="total-sessions">0</div>
-                <div class="stats-label">활성 세션</div>
+                <div class="stats-label d-flex align-items-center">
+                    활성 세션
+                    <i class="fas fa-question-circle ms-1 text-muted stats-tooltip" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="현재 웹사이트에 접속 중인 사용자 세션 수 (최근 30분 이내 활동)"></i>
+                </div>
                 <i class="fas fa-users stats-icon"></i>
             </div>
         </div>
@@ -38,7 +44,13 @@
         <div class="card stats-card success fade-in">
             <div class="card-body position-relative">
                 <div class="stats-number" id="total-events">0</div>
-                <div class="stats-label">총 이벤트</div>
+                <div class="stats-label d-flex align-items-center">
+                    총 이벤트
+                    <i class="fas fa-question-circle ms-1 text-muted stats-tooltip" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="최근 24시간 이내 발생한 모든 사용자 이벤트 수 (페이지뷰, 클릭, 스크롤 등)"></i>
+                </div>
                 <i class="fas fa-chart-line stats-icon"></i>
             </div>
         </div>
@@ -47,7 +59,13 @@
         <div class="card stats-card info fade-in">
             <div class="card-body position-relative">
                 <div class="stats-number" id="avg-session-time">0분</div>
-                <div class="stats-label">평균 세션 시간</div>
+                <div class="stats-label d-flex align-items-center">
+                    평균 세션 시간
+                    <i class="fas fa-question-circle ms-1 text-muted stats-tooltip" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="활성 세션들의 평균 체류 시간 (첫 접속부터 마지막 활동까지)"></i>
+                </div>
                 <i class="fas fa-clock stats-icon"></i>
             </div>
         </div>
@@ -56,7 +74,13 @@
         <div class="card stats-card warning fade-in">
             <div class="card-body position-relative">
                 <div class="stats-number" id="conversion-rate">0%</div>
-                <div class="stats-label">전환율</div>
+                <div class="stats-label d-flex align-items-center">
+                    전환율
+                    <i class="fas fa-question-circle ms-1 text-muted stats-tooltip" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="전체 이벤트 중 전환 이벤트(구매, 가입 등)가 발생한 비율"></i>
+                </div>
                 <i class="fas fa-target stats-icon"></i>
             </div>
         </div>
@@ -284,6 +308,32 @@ canvas {
 
 canvas:hover {
     opacity: 0.9;
+}
+
+/* 툴팁 스타일 */
+.stats-tooltip {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    cursor: help;
+    transition: opacity 0.2s ease;
+}
+
+.stats-tooltip:hover {
+    opacity: 1;
+}
+
+/* Bootstrap 툴팁 커스터마이징 */
+.tooltip {
+    font-size: 0.8rem;
+}
+
+.tooltip-inner {
+    max-width: 250px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 6px;
+    text-align: left;
+    line-height: 1.4;
 }
 
 /* 애니메이션 지연 */
