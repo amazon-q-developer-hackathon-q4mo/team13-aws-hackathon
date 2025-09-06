@@ -105,36 +105,37 @@ graph TB
 - **Application Load Balancer**: 로드 밸런싱
 - **Auto Scaling**: 자동 확장
 
-## 리소스 배포하기
+## 🚀 배포하기
 
-### 전체 배포 (권장)
+자세한 배포 방법은 **[배포가이드.md](./배포가이드.md)**를 참고하세요.
+
+### 빠른 시작
 ```bash
-# 전체 시스템 배포
-./scripts/deploy.sh
+# 1. 인프라 배포
+cd infrastructure
+terraform init
+terraform apply
 
-# 배포 검증
+# 2. 애플리케이션 배포
+cd ..
+./scripts/build.sh
+
+# 3. 배포 검증
 ./scripts/test.sh deployment
 ```
 
-### 단계별 배포
+## 🧪 테스트하기
+
+자세한 테스트 방법은 **[테스트가이드.md](./테스트가이드.md)**를 참고하세요.
+
+### 빠른 테스트
 ```bash
-# Phase 1-5: 서버리스 인프라
-cd infrastructure && terraform apply
+# 전체 테스트 실행
+./scripts/run-tests.sh
 
-# Phase 6: 웹 애플리케이션
-./scripts/deploy-phase6.sh
-
-# Phase 7: 통합 테스트 및 최적화
-./scripts/deploy-phase7.sh
-```
-
-### 리소스 삭제
-```bash
-# 전체 리소스 삭제
-./scripts/cleanup.sh
-
-# 또는 Terraform으로 삭제
-cd infrastructure && terraform destroy
+# 개별 테스트
+./scripts/test.sh deployment
+./scripts/run-tests.sh performance
 ```
 ## 프로젝트 기대 효과 및 예상 사용 사례
 
