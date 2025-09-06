@@ -1,6 +1,9 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.core.cache import cache
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 from .models import Event, Session
 from .serializers import EventSerializer, SessionSerializer, ActiveSessionSerializer
 from .dynamodb_client import db_client
@@ -17,7 +20,13 @@ class SessionViewSet(viewsets.ViewSet):
     
     @action(detail=False, methods=['get'])
     def active(self, request):
-        """활성 세션 목록 조회"""
+        """활성 세션 목록 조회 (캐시 적용)"""
+        cache_key = 'active_sessions'
+        cached_data = cache.get(cache_key)
+        
+        if cached_data is not None:
+            return Response(cached_data)
+            
         try:
             sessions = db_client.get_active_sessions()
             
@@ -34,7 +43,11 @@ class SessionViewSet(viewsets.ViewSet):
                 active_sessions.append(session_data)
             
             serializer = ActiveSessionSerializer(active_sessions, many=True)
-            return Response(serializer.data)
+            response_data = serializer.data
+            
+            # 30초 캐시
+            cache.set(cache_key, response_data, 30)
+            return Response(response_data)
             
         except Exception as e:
             return Response(

@@ -147,6 +147,26 @@ EVENTS_TABLE = os.getenv('EVENTS_TABLE', 'LiveInsight-Events')
 SESSIONS_TABLE = os.getenv('SESSIONS_TABLE', 'LiveInsight-Sessions')
 ACTIVE_SESSIONS_TABLE = os.getenv('ACTIVE_SESSIONS_TABLE', 'LiveInsight-ActiveSessions')
 
+# 캐시 설정
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'liveinsight-cache',
+        'TIMEOUT': 300,  # 5분
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    },
+    'sessions': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'sessions-cache',
+        'TIMEOUT': 1800,  # 30분
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+        }
+    }
+}
+
 # DRF 설정
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
