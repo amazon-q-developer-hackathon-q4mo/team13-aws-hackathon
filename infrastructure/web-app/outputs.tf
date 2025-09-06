@@ -57,3 +57,8 @@ output "cloudwatch_dashboard_url" {
   description = "CloudWatch dashboard URL"
   value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
 }
+
+output "ecs_task_role_name" {
+  description = "Name of the ECS task role"
+  value       = aws_iam_role.ecs_task.name
+}

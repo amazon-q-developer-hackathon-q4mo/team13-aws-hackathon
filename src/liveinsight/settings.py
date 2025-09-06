@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "drf_spectacular",
+    "storages",
     "analytics",
     "dashboard",
 ]
@@ -121,14 +122,36 @@ USE_I18N = True
 USE_TZ = True
 
 
+# AWS 설정
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION = 'us-east-1'
+AWS_REGION = AWS_DEFAULT_REGION
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+# S3 정적 파일 설정
+STATIC_FILES_BUCKET = os.getenv('STATIC_FILES_BUCKET', '')
+
+if STATIC_FILES_BUCKET:
+    # 프로덕션: S3 사용
+    STATIC_URL = f"https://{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/static/"
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_STORAGE_BUCKET_NAME = STATIC_FILES_BUCKET
+    AWS_S3_CUSTOM_DOMAIN = f"{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com"
+    AWS_LOCATION = 'static'
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+else:
+    # 개발: 로컬 파일 사용
+    STATIC_URL = "/static/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
-    BASE_DIR.parent / "static",
-] if (BASE_DIR.parent / "static").exists() else []
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -137,11 +160,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS 설정
 CORS_ALLOW_ALL_ORIGINS = True
-
-# AWS 설정
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_DEFAULT_REGION = 'us-east-1'
 
 # DynamoDB 테이블 설정
 EVENTS_TABLE = os.getenv('EVENTS_TABLE', 'LiveInsight-Events')

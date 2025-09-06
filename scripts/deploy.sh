@@ -26,6 +26,12 @@ cd ../..
 echo "📦 Building and pushing Docker image..."
 ./scripts/build.sh $IMAGE_TAG
 
+# 정적 파일 S3 업로드
+echo "📁 Uploading static files to S3..."
+STATIC_BUCKET=$(cd infrastructure && terraform output -raw static_files_bucket)
+export STATIC_FILES_BUCKET=$STATIC_BUCKET
+cd src && ./scripts/upload_static.sh && cd ..
+
 # ECS 서비스 업데이트
 echo "🔄 Updating ECS service..."
 aws ecs update-service \

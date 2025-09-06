@@ -15,3 +15,15 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+
+variable "static_files_bucket" {
+  description = "S3 bucket name for static files"
+  type        = string
+  default     = ""
+}
+
+variable "alb_logs_bucket" {
+  description = "S3 bucket name for ALB logs"
+  type        = string
+  default     = ""
+}

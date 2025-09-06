@@ -346,6 +346,10 @@ module "web_app" {
   aws_region   = var.aws_region
   project_name = var.project_name
   environment  = var.environment
+  
+  # S3 버킷 정보 전달
+  static_files_bucket = aws_s3_bucket.static_files.bucket
+  alb_logs_bucket     = aws_s3_bucket.alb_logs.bucket
 }
 
 # Phase 7: 고급 모니터링 모듈

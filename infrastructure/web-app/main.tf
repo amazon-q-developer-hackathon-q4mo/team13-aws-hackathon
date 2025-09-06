@@ -171,6 +171,15 @@ resource "aws_lb" "main" {
 
   enable_deletion_protection = false
 
+  dynamic "access_logs" {
+    for_each = var.alb_logs_bucket != "" ? [1] : []
+    content {
+      bucket  = var.alb_logs_bucket
+      prefix  = "alb"
+      enabled = true
+    }
+  }
+
   tags = {
     Name = "${var.project_name}-alb"
   }
@@ -398,8 +407,14 @@ resource "aws_ecs_task_definition" "app" {
         {
           name  = "ACTIVE_SESSIONS_TABLE"
           value = "LiveInsight-ActiveSessions"
+        },
+        {
+          name  = "STATIC_FILES_BUCKET"
+          value = var.static_files_bucket
         }
       ]
+
+
 
       logConfiguration = {
         logDriver = "awslogs"

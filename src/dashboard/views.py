@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.views.static import serve
+from django.conf import settings
+import os
 from django.utils import timezone
 from analytics.dynamodb_client import db_client
 from datetime import datetime, timedelta
@@ -11,7 +14,7 @@ def index(request):
     return render(request, 'dashboard/index.html')
 
 def statistics(request):
-    return render(request, 'dashboard/statistics.html')
+    return render(request, 'dashboard/index.html')
 
 def api_active_sessions(request):
     """활성 세션 API"""
