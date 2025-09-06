@@ -123,11 +123,26 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>사용자</th>
-                            <th>세션 ID</th>
-                            <th>현재 페이지</th>
-                            <th>마지막 활동</th>
-                            <th>세션 시간</th>
+                            <th class="sortable" data-sort="user_id" style="cursor: pointer;">
+                                사용자
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="session_id" style="cursor: pointer;">
+                                세션 ID
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="current_page" style="cursor: pointer;">
+                                현재 페이지
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="last_activity" style="cursor: pointer;">
+                                마지막 활동
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="duration" style="cursor: pointer;">
+                                세션 시간
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
                             <th>액션</th>
                         </tr>
                     </thead>

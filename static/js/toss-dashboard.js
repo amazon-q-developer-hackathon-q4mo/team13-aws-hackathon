@@ -14,6 +14,10 @@ class TossDashboard {
         };
         this.isModalOpen = false;
         this.updateCounter = 0;
+        this.sortConfig = {
+            field: null,
+            direction: 'asc'
+        };
         
         this.init();
     }
@@ -233,10 +237,19 @@ class TossDashboard {
             }
         };
         
-        // 테이블 행 클릭 이벤트
+        // 테이블 정렬 및 행 클릭 이벤트
         document.addEventListener('click', (e) => {
+            // 정렬 헤더 클릭
+            const sortHeader = e.target.closest('.sortable');
+            if (sortHeader) {
+                const field = sortHeader.dataset.sort;
+                this.sortTable(field);
+                return;
+            }
+            
+            // 테이블 행 클릭
             const row = e.target.closest('tbody tr');
-            if (row && row.dataset.sessionId) {
+            if (row && row.dataset.sessionId && !e.target.closest('button')) {
                 const sessionId = row.dataset.sessionId;
                 showSessionDetails(sessionId);
             }
@@ -334,9 +347,20 @@ class TossDashboard {
         }
         
         this.updateCounter++;
+        this.renderSessionTable();
+        document.getElementById('active-count').textContent = sessions.length;
+    }
+    
+    renderSessionTable() {
         const tbody = document.getElementById('sessions-tbody');
+        let sessionsToRender = [...this.data.sessions];
         
-        if (sessions.length === 0) {
+        // 정렬 적용
+        if (this.sortConfig.field) {
+            sessionsToRender = this.sortSessions(sessionsToRender);
+        }
+        
+        if (sessionsToRender.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="6" class="text-center py-5 text-muted">
@@ -346,11 +370,10 @@ class TossDashboard {
                 </tr>
             `;
         } else {
-            // 부드러운 전환을 위한 페이드 효과
             tbody.style.opacity = '0.7';
             
             setTimeout(() => {
-                tbody.innerHTML = sessions.map((session, index) => `
+                tbody.innerHTML = sessionsToRender.map((session, index) => `
                     <tr data-session-id="${session.session_id}" style="cursor: pointer;" class="table-row-clickable session-row">
                         <td>
                             <div class="d-flex align-items-center">
@@ -384,12 +407,9 @@ class TossDashboard {
                 tbody.style.opacity = '1';
             }, 150);
         }
-        
-        document.getElementById('active-count').textContent = sessions.length;
     }
     
     updateSessionTimes(sessions) {
-        // 시간 정보만 업데이트 (DOM 재생성 없이)
         sessions.forEach(session => {
             const row = document.querySelector(`tr[data-session-id="${session.session_id}"]`);
             if (row) {
@@ -404,6 +424,74 @@ class TossDashboard {
                 }
             }
         });
+    }
+    
+    sortTable(field) {
+        if (this.sortConfig.field === field) {
+            this.sortConfig.direction = this.sortConfig.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortConfig.field = field;
+            this.sortConfig.direction = 'asc';
+        }
+        
+        this.updateSortHeaders();
+        this.renderSessionTable();
+    }
+    
+    sortSessions(sessions) {
+        const { field, direction } = this.sortConfig;
+        
+        return sessions.sort((a, b) => {
+            let aVal, bVal;
+            
+            switch (field) {
+                case 'user_id':
+                    aVal = a.user_id.toLowerCase();
+                    bVal = b.user_id.toLowerCase();
+                    break;
+                case 'session_id':
+                    aVal = a.session_id;
+                    bVal = b.session_id;
+                    break;
+                case 'current_page':
+                    aVal = a.current_page.toLowerCase();
+                    bVal = b.current_page.toLowerCase();
+                    break;
+                case 'last_activity':
+                    aVal = parseInt(a.last_activity);
+                    bVal = parseInt(b.last_activity);
+                    break;
+                case 'duration':
+                    aVal = parseInt(a.duration);
+                    bVal = parseInt(b.duration);
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+            if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+    
+    updateSortHeaders() {
+        document.querySelectorAll('.sortable').forEach(header => {
+            const icon = header.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'fas fa-sort sort-icon ms-1 text-muted';
+            }
+        });
+        
+        if (this.sortConfig.field) {
+            const activeHeader = document.querySelector(`[data-sort="${this.sortConfig.field}"]`);
+            if (activeHeader) {
+                const icon = activeHeader.querySelector('.sort-icon');
+                if (icon) {
+                    icon.className = `fas fa-sort-${this.sortConfig.direction === 'asc' ? 'up' : 'down'} sort-icon ms-1 text-primary`;
+                }
+            }
+        }
     }
     
     updateSummaryStats(stats) {

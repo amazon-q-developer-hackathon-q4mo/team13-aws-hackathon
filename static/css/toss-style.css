@@ -247,8 +247,47 @@ body {
     box-shadow: 0 2px 8px rgba(49, 130, 246, 0.1);
 }
 
+/* 정렬 가능한 헤더 스타일 */
+.sortable {
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.sortable:hover {
+    background: rgba(49, 130, 246, 0.05);
+    color: var(--primary-color);
+}
+
+.sortable:hover .sort-icon {
+    color: var(--primary-color) !important;
+}
+
+.sort-icon {
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.sortable:active {
+    transform: scale(0.98);
+}
+
 .session-row {
     animation: slideInFromRight 0.3s ease-out;
+}
+
+/* 정렬 상태 표시 */
+.table thead th.sortable[data-sort] {
+    position: relative;
+}
+
+.table thead th.sortable.sorted-asc .sort-icon::before {
+    content: '\f0de';
+    color: var(--primary-color);
+}
+
+.table thead th.sortable.sorted-desc .sort-icon::before {
+    content: '\f0dd';
+    color: var(--primary-color);
 }
 
 @keyframes slideInFromRight {
