@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/statistics/referrers/', views.api_referrer_stats, name='api_referrer_stats'),
     path('api/hourly-details/', views.api_hourly_details, name='api_hourly_details'),
     path('api/page-details/', views.api_page_details, name='api_page_details'),
+    path('api/referrer-details/', views.api_referrer_details, name='api_referrer_details'),
 ]

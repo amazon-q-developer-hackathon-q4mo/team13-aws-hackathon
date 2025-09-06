@@ -182,6 +182,65 @@ class TossDashboard {
                 }
             }
         });
+        
+        // 유입경로 바 차트
+        this.charts.referrers = new Chart(document.getElementById('referrer-chart'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: '방문자 수',
+                    data: [],
+                    backgroundColor: '#3182f6',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        external: (context) => this.showCustomTooltip(context)
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#f2f4f6'
+                        },
+                        ticks: {
+                            color: '#8b95a1'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#8b95a1',
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 800
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const dataIndex = elements[0].index;
+                        const referrer = this.charts.referrers.data.labels[dataIndex];
+                        this.showReferrerDetails(referrer);
+                    }
+                }
+            }
+        });
     }
     
     setupEventListeners() {
@@ -302,17 +361,19 @@ class TossDashboard {
         this.showChartLoading(true);
         
         try {
-            const [sessions, summary, hourly, pages] = await Promise.all([
+            const [sessions, summary, hourly, pages, referrers] = await Promise.all([
                 fetch('/api/sessions/active/').then(r => r.json()),
                 fetch('/api/statistics/summary/').then(r => r.json()),
                 fetch('/api/statistics/hourly/').then(r => r.json()),
-                fetch('/api/statistics/pages/').then(r => r.json())
+                fetch('/api/statistics/pages/').then(r => r.json()),
+                fetch('/api/statistics/referrers/').then(r => r.json())
             ]);
             
             this.updateSessions(sessions);
             this.updateSummaryStats(summary);
             this.updateRealtimeChart(hourly);
             this.updatePageChart(pages);
+            this.updateReferrerChart(referrers);
             this.updateLastUpdateTime();
             this.animateLiveIndicator();
             
@@ -532,6 +593,21 @@ class TossDashboard {
         this.charts.pages.update('active');
     }
     
+    updateReferrerChart(referrerData) {
+        const labels = referrerData.map(item => {
+            if (!item.referrer || item.referrer === 'direct') {
+                return '직접 접속';
+            }
+            const domain = item.referrer.replace(/^https?:\/\//, '').split('/')[0];
+            return domain.length > 20 ? domain.substring(0, 20) + '...' : domain;
+        });
+        const data = referrerData.map(item => item.count);
+        
+        this.charts.referrers.data.labels = labels;
+        this.charts.referrers.data.datasets[0].data = data;
+        this.charts.referrers.update('active');
+    }
+    
     showCustomTooltip(context) {
         const tooltip = document.getElementById('chart-tooltip');
         const tooltipModel = context.tooltip;
@@ -573,6 +649,24 @@ class TossDashboard {
                 <div class="d-flex justify-content-between">
                     <span>조회수:</span>
                     <span class="fw-bold text-primary">${value}회</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>비율:</span>
+                    <span class="fw-bold">${percentage}%</span>
+                </div>
+            `;
+        } else if (context.chart.config.type === 'bar') {
+            const dataIndex = tooltipModel.dataPoints[0].dataIndex;
+            const label = tooltipModel.dataPoints[0].label;
+            const value = tooltipModel.dataPoints[0].parsed.x;
+            const total = this.charts.referrers.data.datasets[0].data.reduce((a, b) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            
+            content = `
+                <div class="fw-bold mb-1">${label}</div>
+                <div class="d-flex justify-content-between">
+                    <span>방문자:</span>
+                    <span class="fw-bold text-primary">${value}명</span>
                 </div>
                 <div class="d-flex justify-content-between">
                     <span>비율:</span>
@@ -918,6 +1012,83 @@ class TossDashboard {
         } catch (error) {
             console.error('Error loading page details:', error);
             this.showToast('페이지 상세 정보를 불러오는데 실패했습니다.', 'error');
+            this.isModalOpen = false;
+        }
+    }
+    
+    async showReferrerDetails(referrer) {
+        try {
+            this.isModalOpen = true;
+            const response = await fetch(`/api/referrer-details/?referrer=${encodeURIComponent(referrer)}`);
+            const data = await response.json();
+            
+            const modalBody = document.getElementById('session-details');
+            modalBody.innerHTML = `
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i class="fas fa-external-link-alt text-primary me-2"></i>
+                                    유입경로 상세
+                                </h6>
+                                <div class="mb-2">
+                                    <small class="text-muted">유입경로</small>
+                                    <div class="fw-medium">${referrer === '직접 접속' ? '직접 접속' : data.referrer}</div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">총 방문자</small>
+                                    <div class="fw-bold text-primary">${data.total_visitors}명</div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">시간대별 분포</small>
+                                    <div class="mt-2">
+                                        ${Object.entries(data.hourly_distribution).map(([hour, count]) => `
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">${hour}</span>
+                                                <span class="badge bg-light text-dark">${count}명</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">
+                            <i class="fas fa-history text-primary me-2"></i>
+                            최근 유입 기록 (10개)
+                        </h6>
+                        <div class="timeline-container" style="max-height: 300px; overflow-y: auto;">
+                            ${data.recent_visits.map((visit, index) => `
+                                <div class="timeline-item" style="animation-delay: ${index * 0.05}s">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <span class="fw-medium">${visit.user_id}</span>
+                                        <small class="text-muted">${visit.formatted_time}</small>
+                                    </div>
+                                    <div class="small text-muted">
+                                        랜딩 페이지: ${visit.landing_page}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.querySelector('.modal-title').textContent = `${referrer} 유입경로 상세`;
+            
+            const existingModal = bootstrap.Modal.getInstance(document.getElementById('sessionModal'));
+            if (existingModal) {
+                existingModal.dispose();
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('sessionModal'));
+            modal.show();
+            
+        } catch (error) {
+            console.error('Error loading referrer details:', error);
+            this.showToast('유입경로 상세 정보를 불러오는데 실패했습니다.', 'error');
             this.isModalOpen = false;
         }
     }

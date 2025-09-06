@@ -242,6 +242,67 @@ def api_page_details(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+def api_referrer_details(request):
+    """유입경로 상세 데이터 API"""
+    try:
+        referrer = request.GET.get('referrer')
+        if not referrer:
+            return JsonResponse({'error': 'referrer parameter required'}, status=400)
+        
+        # 해당 유입경로의 이벤트 조회
+        events = db_client.get_hourly_stats(168)  # 7일간 데이터
+        
+        # 해당 유입경로 필터링
+        filtered_events = []
+        for event in events:
+            if event.get('event_type') == 'page_view':
+                event_referrer = event.get('referrer', '')
+                
+                # 유입경로 매칭 로직
+                matched = False
+                if referrer == '직접 접속' and not event_referrer:
+                    matched = True
+                elif 'google' in referrer.lower() and 'google' in event_referrer.lower():
+                    matched = True
+                elif 'facebook' in referrer.lower() and 'facebook' in event_referrer.lower():
+                    matched = True
+                elif 'twitter' in referrer.lower() and 'twitter' in event_referrer.lower():
+                    matched = True
+                elif referrer.lower() in event_referrer.lower():
+                    matched = True
+                
+                if matched:
+                    timestamp = int(event.get('timestamp', 0))
+                    utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
+                    local_time = utc_time.astimezone(timezone.get_current_timezone())
+                    
+                    filtered_events.append({
+                        'event_id': event.get('event_id'),
+                        'user_id': event.get('user_id'),
+                        'session_id': event.get('session_id'),
+                        'timestamp': event.get('timestamp'),
+                        'formatted_time': local_time.strftime('%m/%d %H:%M'),
+                        'landing_page': event.get('page_url', '')
+                    })
+        
+        # 시간대별 분포
+        hourly_distribution = defaultdict(int)
+        for event in filtered_events:
+            timestamp = int(event.get('timestamp', 0))
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=pytz.UTC)
+            local_time = utc_time.astimezone(timezone.get_current_timezone())
+            hour_key = local_time.strftime('%H:00')
+            hourly_distribution[hour_key] += 1
+        
+        return JsonResponse({
+            'referrer': referrer,
+            'total_visitors': len(filtered_events),
+            'recent_visits': filtered_events[:10],  # 최근 10개
+            'hourly_distribution': dict(hourly_distribution)
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 def calculate_duration(last_activity):
     if not last_activity:
         return 0

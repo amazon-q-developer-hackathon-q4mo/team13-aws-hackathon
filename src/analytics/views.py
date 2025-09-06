@@ -104,6 +104,30 @@ class StatisticsViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    @action(detail=False, methods=['get'])
+    def referrers(self, request):
+        """유입경로별 통계"""
+        try:
+            referrer_stats = db_client.get_referrer_stats()
+            return Response(referrer_stats)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """요약 통계"""
+        try:
+            summary_stats = db_client.get_summary_stats()
+            return Response(summary_stats)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     def aggregate_by_hour(self, events):
         from datetime import datetime, timedelta, timezone as dt_timezone
         from django.utils import timezone
