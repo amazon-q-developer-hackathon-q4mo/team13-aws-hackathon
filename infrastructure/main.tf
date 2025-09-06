@@ -352,6 +352,11 @@ module "web_app" {
   alb_logs_bucket     = aws_s3_bucket.alb_logs.bucket
 }
 
+# JavaScript SDK 모듈
+module "js_sdk" {
+  source = "./js-sdk"
+}
+
 # Phase 7: 고급 모니터링 모듈
 module "advanced_monitoring" {
   source = "./monitoring"
