@@ -19,7 +19,7 @@ variable "environment" {
 variable "static_files_bucket" {
   description = "S3 bucket name for static files"
   type        = string
-  default     = ""
+  default     = "liveinsight-static-files-051919e8"
 }
 
 variable "alb_logs_bucket" {

@@ -136,10 +136,10 @@ STATIC_FILES_BUCKET = os.getenv('STATIC_FILES_BUCKET', '')
 
 if STATIC_FILES_BUCKET:
     # 프로덕션: S3 사용
-    STATIC_URL = f"https://{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/static/"
+    STATIC_URL = f"https://{STATIC_FILES_BUCKET}.s3.amazonaws.com/static/"
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     AWS_STORAGE_BUCKET_NAME = STATIC_FILES_BUCKET
-    AWS_S3_CUSTOM_DOMAIN = f"{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com"
+    AWS_S3_CUSTOM_DOMAIN = f"{STATIC_FILES_BUCKET}.s3.amazonaws.com"
     AWS_LOCATION = 'static'
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
