@@ -126,7 +126,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR.parent / "static",
 ]
 
 # Default primary key field type
@@ -146,6 +146,26 @@ AWS_DEFAULT_REGION = 'us-east-1'
 EVENTS_TABLE = os.getenv('EVENTS_TABLE', 'LiveInsight-Events')
 SESSIONS_TABLE = os.getenv('SESSIONS_TABLE', 'LiveInsight-Sessions')
 ACTIVE_SESSIONS_TABLE = os.getenv('ACTIVE_SESSIONS_TABLE', 'LiveInsight-ActiveSessions')
+
+# 캐시 설정
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'liveinsight-cache',
+        'TIMEOUT': 300,  # 5분
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    },
+    'sessions': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'sessions-cache',
+        'TIMEOUT': 1800,  # 30분
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+        }
+    }
+}
 
 # DRF 설정
 REST_FRAMEWORK = {
