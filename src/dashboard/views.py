@@ -242,11 +242,14 @@ def api_page_details(request):
             hour_key = local_time.strftime('%H:00')
             hourly_distribution[hour_key] += 1
         
+        # 시간대별 분포를 시간순으로 정렬
+        sorted_hourly = dict(sorted(hourly_distribution.items()))
+        
         return JsonResponse({
             'page_url': page_url,
             'total_views': len(filtered_events),
             'recent_events': filtered_events[:10],  # 최근 10개
-            'hourly_distribution': dict(hourly_distribution)
+            'hourly_distribution': sorted_hourly
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -303,11 +306,14 @@ def api_referrer_details(request):
             hour_key = local_time.strftime('%H:00')
             hourly_distribution[hour_key] += 1
         
+        # 시간대별 분포를 시간순으로 정렬
+        sorted_hourly = dict(sorted(hourly_distribution.items()))
+        
         return JsonResponse({
             'referrer': referrer,
             'total_visitors': len(filtered_events),
             'recent_visits': filtered_events[:10],  # 최근 10개
-            'hourly_distribution': dict(hourly_distribution)
+            'hourly_distribution': sorted_hourly
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
