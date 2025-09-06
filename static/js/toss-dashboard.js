@@ -834,7 +834,7 @@ class TossDashboard {
                         <i class="fas fa-history text-primary me-2"></i>
                         최근 활동 기록
                     </h6>
-                    <div class="timeline-container" style="max-height: 300px; overflow-y: auto;">
+                    <div class="timeline-container" style="max-height: 500px; overflow-y: auto;">
                         ${events.slice(-10).reverse().map((event, index) => `
                             <div class="timeline-item" style="animation-delay: ${index * 0.1}s">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
@@ -910,7 +910,7 @@ class TossDashboard {
                             <i class="fas fa-list text-primary me-2"></i>
                             최근 이벤트 (최대 20개)
                         </h6>
-                        <div class="timeline-container" style="max-height: 300px; overflow-y: auto;">
+                        <div class="timeline-container" style="max-height: 500px; overflow-y: auto;">
                             ${data.events.map((event, index) => `
                                 <div class="timeline-item" style="animation-delay: ${index * 0.05}s">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
@@ -956,8 +956,8 @@ class TossDashboard {
             modalBody.innerHTML = `
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <div class="card border-0 bg-light">
-                            <div class="card-body">
+                        <div class="card border-0 bg-light" style="height: 500px;">
+                            <div class="card-body d-flex flex-column">
                                 <h6 class="card-title mb-3">
                                     <i class="fas fa-file-alt text-primary me-2"></i>
                                     페이지 상세 정보
@@ -970,9 +970,9 @@ class TossDashboard {
                                     <small class="text-muted">총 조회수</small>
                                     <div class="fw-bold text-primary">${data.total_views}회</div>
                                 </div>
-                                <div class="mb-2">
+                                <div class="mb-2 flex-grow-1">
                                     <small class="text-muted">시간대별 분포</small>
-                                    <div class="mt-2">
+                                    <div class="mt-2" style="max-height: 350px; overflow-y: auto;">
                                         ${Object.entries(data.hourly_distribution).map(([hour, count]) => `
                                             <div class="d-flex justify-content-between">
                                                 <span class="small">${hour}</span>
@@ -985,11 +985,11 @@ class TossDashboard {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="mb-3">
+                        <h6 class="mb-2">
                             <i class="fas fa-history text-primary me-2"></i>
                             최근 방문 기록 (10개)
                         </h6>
-                        <div class="timeline-container" style="max-height: 300px; overflow-y: auto;">
+                        <div class="timeline-container" style="max-height: 500px; overflow-y: auto;">
                             ${data.recent_events.map((event, index) => `
                                 <div class="timeline-item" style="animation-delay: ${index * 0.05}s">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
@@ -1035,8 +1035,8 @@ class TossDashboard {
             modalBody.innerHTML = `
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <div class="card border-0 bg-light">
-                            <div class="card-body">
+                        <div class="card border-0 bg-light" style="height: 500px;">
+                            <div class="card-body d-flex flex-column">
                                 <h6 class="card-title mb-3">
                                     <i class="fas fa-external-link-alt text-primary me-2"></i>
                                     유입경로 상세
@@ -1049,9 +1049,9 @@ class TossDashboard {
                                     <small class="text-muted">총 방문자</small>
                                     <div class="fw-bold text-primary">${data.total_visitors}명</div>
                                 </div>
-                                <div class="mb-2">
+                                <div class="mb-2 flex-grow-1">
                                     <small class="text-muted">시간대별 분포</small>
-                                    <div class="mt-2">
+                                    <div class="mt-2" style="max-height: 350px; overflow-y: auto;">
                                         ${Object.entries(data.hourly_distribution).map(([hour, count]) => `
                                             <div class="d-flex justify-content-between">
                                                 <span class="small">${hour}</span>
@@ -1068,7 +1068,7 @@ class TossDashboard {
                             <i class="fas fa-history text-primary me-2"></i>
                             최근 유입 기록 (10개)
                         </h6>
-                        <div class="timeline-container" style="max-height: 300px; overflow-y: auto;">
+                        <div class="timeline-container" style="max-height: 500px; overflow-y: auto;">
                             ${data.recent_visits.map((visit, index) => `
                                 <div class="timeline-item" style="animation-delay: ${index * 0.05}s">
                                     <div class="d-flex justify-content-between align-items-start mb-1">
