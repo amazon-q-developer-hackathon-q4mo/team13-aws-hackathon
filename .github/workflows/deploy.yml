@@ -41,17 +41,21 @@ jobs:
         cd src
         pip install -r requirements.txt
 
-    - name: Upload static files to S3
+    - name: Get S3 bucket name
+      id: get-bucket
       run: |
         cd infrastructure
-        STATIC_BUCKET=$(terraform output -raw static_files_bucket 2>/dev/null || echo "")
-        if [ -n "$STATIC_BUCKET" ]; then
-          cd ../src
-          export STATIC_FILES_BUCKET=$STATIC_BUCKET
-          python manage.py collectstatic --noinput
-          aws s3 sync staticfiles/ s3://$STATIC_BUCKET/static/ --delete
-          echo "✅ 정적 파일 S3 업로드 완료"
-        fi
+        BUCKET=$(terraform output -raw static_files_bucket 2>/dev/null || echo "")
+        echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+    - name: Upload static files to S3
+      if: steps.get-bucket.outputs.bucket != ''
+      run: |
+        cd src
+        export STATIC_FILES_BUCKET=${{ steps.get-bucket.outputs.bucket }}
+        python manage.py collectstatic --noinput
+        aws s3 sync staticfiles/ s3://$STATIC_FILES_BUCKET/static/ --delete
+        echo "✅ 정적 파일 S3 업로드 완료"
 
     - name: Build, tag, and push image to Amazon ECR
       id: build-image

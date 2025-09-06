@@ -72,6 +72,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
     id     = "delete_old_logs"
     status = "Enabled"
 
+    filter {
+      prefix = ""
+    }
+
     expiration {
       days = 30
     }
@@ -130,6 +134,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "backups" {
   rule {
     id     = "backup_lifecycle"
     status = "Enabled"
+
+    filter {
+      prefix = ""
+    }
 
     transition {
       days          = 30

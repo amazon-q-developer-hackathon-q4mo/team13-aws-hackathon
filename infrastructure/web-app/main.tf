@@ -414,6 +414,8 @@ resource "aws_ecs_task_definition" "app" {
         }
       ]
 
+
+
       logConfiguration = {
         logDriver = "awslogs"
         options = {

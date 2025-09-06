@@ -122,6 +122,12 @@ USE_I18N = True
 USE_TZ = True
 
 
+# AWS 설정
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_DEFAULT_REGION = 'us-east-1'
+AWS_REGION = AWS_DEFAULT_REGION
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -154,11 +160,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS 설정
 CORS_ALLOW_ALL_ORIGINS = True
-
-# AWS 설정
-AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
-AWS_DEFAULT_REGION = 'us-east-1'
 
 # DynamoDB 테이블 설정
 EVENTS_TABLE = os.getenv('EVENTS_TABLE', 'LiveInsight-Events')
