@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechMall - LiveInsight 테스트 쇼핑몰</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-banner { 
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200'); 
+            background-size: cover; 
+            color: white; 
+            padding: 80px 0; 
+        }
+        .product-card { 
+            transition: transform 0.3s; 
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .product-card:hover { 
+            transform: translateY(-5px); 
+        }
+        .price { color: #e74c3c; font-weight: bold; font-size: 1.2em; }
+        .cart-badge { 
+            position: absolute; 
+            top: -8px; 
+            right: -8px; 
+            background: #e74c3c; 
+            color: white; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            font-size: 12px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .tracking-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .tracking-indicator .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 추적 상태 표시 -->
+    <div class="tracking-indicator">
+        <span class="pulse"></span>
+        LiveInsight 추적 중
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#" onclick="trackPageView('/')">
+                <i class="fas fa-shopping-bag me-2"></i>TechMall
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#products" onclick="trackPageView('/products')">
+                    <i class="fas fa-laptop me-1"></i>제품
+                </a>
+                <a class="nav-link position-relative" href="#" onclick="showCart()">
+                    <i class="fas fa-shopping-cart me-1"></i>장바구니
+                    <span class="cart-badge" id="cartCount">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <section class="hero-banner text-center">
+        <div class="container">
+            <h1 class="display-4 mb-4">🎉 특가 세일!</h1>
+            <p class="lead mb-4">최신 전자제품을 특가로 만나보세요</p>
+            <button class="btn btn-warning btn-lg" onclick="trackConversion('hero_cta')">
+                <i class="fas fa-bolt me-2"></i>지금 쇼핑하기
+            </button>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="py-5" id="products">
+        <div class="container">
+            <h2 class="text-center mb-4">🔥 인기 상품</h2>
+            <div class="row" id="productGrid">
+                <!-- 상품들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart me-2"></i>장바구니
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="cartItems">
+                    <p class="text-center text-muted">장바구니가 비어있습니다</p>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5>총 금액: <span id="totalPrice">0</span>원</h5>
+                        </div>
+                        <button type="button" class="btn btn-success w-100" onclick="checkout()">
+                            <i class="fas fa-credit-card me-2"></i>결제하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LiveInsight SDK -->
+    <script src="https://liveinsight-static-files-051919e8.s3.us-east-1.amazonaws.com/static/js/liveinsight-tracker.js"></script>
+    
+    <script>
+        // 상품 데이터
+        const products = [
+            {
+                id: 1, name: "MacBook Pro 16인치", 
+                price: 3200000, 
+                image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300"
+            },
+            {
+                id: 2, name: "iPhone 15 Pro", 
+                price: 1350000,
+                image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300"
+            },
+            {
+                id: 3, name: "iPad Pro 12.9인치", 
+                price: 1450000,
+                image: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300"
+            },
+            {
+                id: 4, name: "AirPods Pro", 
+                price: 280000,
+                image: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=300"
+            },
+            {
+                id: 5, name: "Apple Watch Ultra", 
+                price: 950000,
+                image: "https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=300"
+            },
+            {
+                id: 6, name: "Samsung Galaxy S24", 
+                price: 1200000,
+                image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300"
+            }
+        ];
+
+        let cart = [];
+
+        // LiveInsight 초기화 - 배포된 API 엔드포인트 사용
+        document.addEventListener('DOMContentLoaded', function() {
+            // 환경에 따른 API 엔드포인트 선택
+            const apiUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:8000/api/events/'
+                : 'https://qnwoi1ardd.execute-api.us-east-1.amazonaws.com/prod/events';
+            
+            LiveInsight.init({
+                apiUrl: apiUrl
+            });
+
+            renderProducts();
+            console.log('🛒 TechMall 테스트 쇼핑몰이 로드되었습니다!');
+            console.log('📊 모든 사용자 행동이 LiveInsight로 실시간 추적됩니다.');
+        });
+
+        // 상품 렌더링
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = `
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card product-card h-100" onclick="viewProduct(${product.id})">
+                            <img src="${product.image}" class="card-img-top" alt="${product.name}" style="height: 200px; object-fit: cover;">
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">${product.name}</h6>
+                                <div class="mb-2">
+                                    <span class="price">${product.price.toLocaleString()}원</span>
+                                </div>
+                                <button class="btn btn-primary mt-auto" onclick="addToCart(${product.id}); event.stopPropagation();">
+                                    <i class="fas fa-cart-plus me-1"></i>장바구니 담기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.innerHTML += productCard;
+            });
+        }
+
+        // 페이지뷰 추적
+        function trackPageView(page) {
+            LiveInsight.track('page_view', { 
+                page: page,
+                page_title: document.title
+            });
+            console.log(`📄 페이지뷰 추적: ${page}`);
+        }
+
+        // 전환 추적
+        function trackConversion(type) {
+            LiveInsight.track('conversion', { 
+                conversion_type: type,
+                page_url: window.location.href
+            });
+            console.log(`🎯 전환 추적: ${type}`);
+        }
+
+        // 상품 조회
+        function viewProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            LiveInsight.track('product_view', {
+                product_id: productId,
+                product_name: product.name,
+                product_price: product.price,
+                page_url: window.location.href,
+                user_action: true  // 실제 사용자 액션 표시
+            });
+            
+            console.log(`👥 [REAL USER ACTION] 상품 조회: ${product.name}`);
+            
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #007bff;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 9999;
+                font-size: 14px;
+                font-weight: bold;
+            `;
+            notification.textContent = `👁️ ${product.name} 상품 조회`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 2000);
+        }
+
+        // 장바구니 추가
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            
+            LiveInsight.track('add_to_cart', {
+                product_id: productId,
+                product_name: product.name,
+                product_price: product.price,
+                cart_total_items: cart.reduce((sum, item) => sum + item.quantity, 0),
+                cart_total_value: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            });
+            
+            updateCartUI();
+            console.log(`👥 [REAL USER ACTION] 장바구니 추가: ${product.name}`);
+            
+            // 시각적 피드백
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>담김!';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-primary');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-success');
+            }, 1000);
+        }
+
+        // 장바구니 UI 업데이트
+        function updateCartUI() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            document.getElementById('cartCount').textContent = totalItems;
+        }
+
+        // 장바구니 보기
+        function showCart() {
+            LiveInsight.track('view_cart', {
+                cart_items: cart.length,
+                cart_total_value: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            });
+            
+            const cartItems = document.getElementById('cartItems');
+            const totalPrice = document.getElementById('totalPrice');
+            
+            if (cart.length === 0) {
+                cartItems.innerHTML = '<p class="text-center text-muted">장바구니가 비어있습니다</p>';
+                totalPrice.textContent = '0';
+            } else {
+                let itemsHTML = '';
+                let total = 0;
+                
+                cart.forEach(item => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    
+                    itemsHTML += `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <div class="d-flex align-items-center">
+                                <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover;" class="me-3">
+                                <div>
+                                    <h6 class="mb-0">${item.name}</h6>
+                                    <small class="text-muted">${item.price.toLocaleString()}원 × ${item.quantity}</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div>${itemTotal.toLocaleString()}원</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                cartItems.innerHTML = itemsHTML;
+                totalPrice.textContent = total.toLocaleString();
+            }
+            
+            console.log(`👀 장바구니 조회`);
+            new bootstrap.Modal(document.getElementById('cartModal')).show();
+        }
+
+        // 결제
+        function checkout() {
+            const totalValue = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            
+            LiveInsight.track('purchase', {
+                transaction_id: 'txn_' + Date.now(),
+                total_value: totalValue,
+                total_items: totalItems,
+                products: cart.map(item => ({
+                    product_id: item.id,
+                    product_name: item.name,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            });
+            
+            console.log(`🎉 구매 완료! 총 ${totalItems}개 상품, ${totalValue.toLocaleString()}원`);
+            
+            // 알람 대신 시각적 피드백
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #28a745;
+                color: white;
+                padding: 20px 30px;
+                border-radius: 10px;
+                z-index: 9999;
+                font-size: 16px;
+                font-weight: bold;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            `;
+            notification.innerHTML = `🎉 구매 완료!<br>총 ${totalItems}개 상품, ${totalValue.toLocaleString()}원`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+            
+            // 장바구니 비우기
+            cart = [];
+            updateCartUI();
+            bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
+        }
+
+        // 스크롤 추적
+        let scrollTracked = { 25: false, 50: false, 75: false };
+        window.addEventListener('scroll', function() {
+            const scrollPercent = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+            
+            Object.keys(scrollTracked).forEach(threshold => {
+                if (scrollPercent >= threshold && !scrollTracked[threshold]) {
+                    LiveInsight.track('scroll', { 
+                        depth: threshold + '%',
+                        page_url: window.location.href
+                    });
+                    scrollTracked[threshold] = true;
+                    console.log(`📜 스크롤 추적: ${threshold}%`);
+                }
+            });
+        });
+
+        // 자동 데모 시뮬레이션 (선택사항)
+        function startAutoDemo() {
+            console.log('🤖 자동 데모 시작...');
+            
+            // 더 많은 이벤트 생성
+            const actions = [
+                () => { console.log('🤖 홈페이지 조회'); trackPageView('/'); },
+                () => { console.log('🤖 상품 1 조회'); viewProduct(1); },
+                () => { console.log('🤖 상품 2 조회'); viewProduct(2); },
+                () => { console.log('🤖 상품 3 조회'); viewProduct(3); },
+                () => { console.log('🤖 상품 1 장바구니 추가'); addToCart(1); },
+                () => { console.log('🤖 상품 2 장바구니 추가'); addToCart(2); },
+                () => { console.log('🤖 장바구니 확인'); showCart(); },
+                () => { console.log('🤖 구매 완료'); checkout(); },
+                () => { console.log('🤖 상품 4 조회'); viewProduct(4); },
+                () => { console.log('🤖 상품 5 조회'); viewProduct(5); }
+            ];
+            
+            actions.forEach((action, index) => {
+                setTimeout(action, (index + 1) * 2000);
+            });
+        }
+        
+        // 지속적인 데모 이벤트 생성 (알람 없이)
+        function startContinuousDemo() {
+            console.log('🔄 지속적인 데모 시작...');
+            
+            setInterval(() => {
+                // 30% 확률로만 이벤트 생성 (너무 많지 않게)
+                if (Math.random() > 0.7) {
+                    const randomAction = Math.floor(Math.random() * 4);
+                    const randomProduct = Math.floor(Math.random() * 6) + 1;
+                    
+                    switch(randomAction) {
+                        case 0:
+                            LiveInsight.track('page_view', { page: '/products', silent: true });
+                            break;
+                        case 1:
+                            const product = products.find(p => p.id === randomProduct);
+                            LiveInsight.track('product_view', {
+                                product_id: randomProduct,
+                                product_name: product.name,
+                                product_price: product.price,
+                                silent: true
+                            });
+                            break;
+                        case 2:
+                            if (Math.random() > 0.8) {
+                                LiveInsight.track('add_to_cart', {
+                                    product_id: randomProduct,
+                                    silent: true
+                                });
+                            }
+                            break;
+                        case 3:
+                            if (Math.random() > 0.95) {
+                                LiveInsight.track('purchase', {
+                                    transaction_id: 'auto_' + Date.now(),
+                                    total_value: Math.floor(Math.random() * 500000) + 100000,
+                                    silent: true
+                                });
+                            }
+                            break;
+                    }
+                }
+            }, 8000);  // 8초마다
+        }
+
+        // 콘솔에서 자동 데모 실행 가능
+        window.startAutoDemo = startAutoDemo;
+        window.startContinuousDemo = startContinuousDemo;
+        
+        console.log('💡 자동 데모: startAutoDemo() - 일회성 데모');
+        console.log('💡 지속 데모: startContinuousDemo() - 지속적인 이벤트 생성');
+        
+        // 자동으로 지속 데모 시작 (10초 후)
+        setTimeout(() => {
+            console.log('🚀 지속적인 데모 자동 시작!');
+            startContinuousDemo();
+        }, 10000);
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
