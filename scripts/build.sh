@@ -26,16 +26,16 @@ if [ -z "$ECR_REPO" ]; then
     exit 1
 fi
 
-echo "📦 Building Docker image..."
+echo "📦 Building Docker image for linux/amd64..."
 # src 디렉토리 존재 확인
 if [ ! -d "src" ]; then
     echo "❌ src directory not found. Please ensure Django code is in src/"
     exit 1
 fi
 
-# src 디렉토리에서 빌드
+# src 디렉토리에서 빌드 (linux/amd64 플랫폼 명시)
 cd src
-docker build -t $PROJECT_NAME:$IMAGE_TAG .
+docker build --platform linux/amd64 -t $PROJECT_NAME:$IMAGE_TAG .
 cd ..
 
 echo "🏷️  Tagging image..."
