@@ -43,12 +43,6 @@
 - 모바일 반응형 디자인으로 언제 어디서나 모니터링
 - 알람 및 임계값 설정으로 중요 이벤트 즉시 알림
 
-**4. 고급 분석**
-- 사용자 세그멘테이션 (신규/재방문, 지역별, 디바이스별)
-- 퍼널 분석 (전환 과정의 각 단계별 이탈률)
-- 코호트 분석 (시간별 사용자 그룹의 행동 패턴)
-- A/B 테스트 결과 실시간 분석
-
 ## 🔥 주요 기능
 
 ### 실시간 이벤트 수집
@@ -57,13 +51,49 @@ LiveInsight의 실시간 이벤트 수집 시스템은 웹사이트 방문자의
 ### 실시간 대시보드
 LiveInsight의 대시보드는 복잡한 데이터를 직관적이고 아름다운 시각적 요소로 변환하여 제공합니다. 기존 분석 도구들이 수많은 메뉴와 옵션으로 인해 초보자들에게 혼란을 주는 반면, LiveInsight는 핵심 지표만을 선별하여 깔끔하게 배치했습니다. 현재 접속자 수, 페이지별 실시간 조회수, 유입 경로별 트래픽 분포, 디바이스별 사용 현황을 한 눈에 파악할 수 있으며, 모바일 반응형 디자인으로 언제 어디서나 모니터링이 가능합니다.
 
-### 지능형 사용자 행동 분석
-LiveInsight의 고급 분석 시스템은 단순한 수치 나열을 넘어 사용자의 심층 행동 패턴을 분석합니다. 사용자 여정 맵을 통해 방문자가 어떤 순서로 페이지를 방문하는지, 클릭 히트맵으로 어떤 요소를 가장 많이 클릭하는지, 스크롤 깊이 분석으로 콘텐츠를 얼마나 읽는지를 파악할 수 있습니다. 또한 이탈 지점 분석을 통해 사용자가 어디서 웹사이트를 떠나는지를 정확히 파악하여 즉각적인 개선 조치를 취할 수 있습니다.
-
-### 서버리스 데이터 처리 엔진
-LiveInsight의 데이터 처리 엔진은 AWS Lambda와 DynamoDB를 활용한 완전한 서버리스 아키텍처로 구성되어 있습니다. 이는 기존 서버 기반 시스템이 트래픽 급증 시 성능 저하나 서버 다운 문제를 겪는 반면, 초당 수천 건의 이벤트를 안정적으로 처리하고 자동 스케일링으로 트래픽 급증에도 안정적인 서비스를 제공합니다. 또한 데이터 무결성 보장 및 중복 제거 기능을 통해 정확한 분석 결과를 보장합니다.
 
 ## 시스템 아키텍처
+
+
+```mermaid
+graph TB
+    subgraph "사용자 레이어"
+        U[웹사이트 방문자]
+        D[대시보드 사용자]
+    end
+
+    subgraph "웹 애플리케이션"
+        ALB[Application Load Balancer]
+        ECS[ECS Fargate<br/>Django App]
+    end
+
+    subgraph "서버리스 백엔드"
+        APIG[API Gateway]
+        L1[Lambda<br/>이벤트 수집]
+        L2[Lambda<br/>데이터 처리]
+    end
+
+    subgraph "데이터 저장소"
+        DDB[DynamoDB<br/>실시간 데이터]
+        S3[S3<br/>백업 & 로그]
+    end
+
+    U -->|JavaScript SDK| APIG
+    D -->|HTTPS| ALB
+    ALB --> ECS
+    APIG --> L1
+    L1 --> L2
+    L2 --> DDB
+    ECS --> DDB
+    DDB --> S3
+    
+    style U fill:#e1f5fe
+    style D fill:#e1f5fe
+    style DDB fill:#fff3e0
+    style ECS fill:#e8f5e8
+    style L1 fill:#fff9c4
+    style L2 fill:#fff9c4
+```
 
 ### 서버리스 아키텍처 (Phase 1-5)
 - **API Gateway + Lambda**: 이벤트 수집 API
@@ -74,11 +104,6 @@ LiveInsight의 데이터 처리 엔진은 AWS Lambda와 DynamoDB를 활용한 �
 - **ECS Fargate**: Django 웹 애플리케이션
 - **Application Load Balancer**: 로드 밸런싱
 - **Auto Scaling**: 자동 확장
-
-### 프로덕션 보안 (Phase 8-9)
-- **Route 53 + CloudFront**: 글로벌 CDN
-- **WAF + GuardDuty**: 보안 보호
-- **백업 + 재해복구**: 99.99% 가용성
 
 ## 리소스 배포하기
 
@@ -101,12 +126,6 @@ cd infrastructure && terraform apply
 
 # Phase 7: 통합 테스트 및 최적화
 ./scripts/deploy-phase7.sh
-
-# Phase 8: 프로덕션 보안
-./scripts/deploy-phase8.sh
-
-# Phase 9: 백업 및 재해복구
-./scripts/deploy-phase9.sh
 ```
 
 ### 리소스 삭제
