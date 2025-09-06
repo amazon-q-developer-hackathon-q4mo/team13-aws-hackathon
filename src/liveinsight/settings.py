@@ -126,9 +126,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR.parent / "static",
-] if (BASE_DIR.parent / "static").exists() else []
+# STATICFILES_DIRS = []  # 인라인 CSS 사용으로 불필요
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

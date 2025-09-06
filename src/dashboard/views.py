@@ -8,10 +8,10 @@ import json
 import pytz
 
 def index(request):
-    return render(request, 'dashboard/index.html')
+    return render(request, 'dashboard/index_inline.html')
 
 def statistics(request):
-    return render(request, 'dashboard/statistics.html')
+    return render(request, 'dashboard/index_inline.html')
 
 def api_active_sessions(request):
     """활성 세션 API"""
