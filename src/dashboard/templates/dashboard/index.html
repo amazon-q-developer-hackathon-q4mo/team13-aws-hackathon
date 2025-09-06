@@ -1,40 +1,192 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2>실시간 활성 세션</h2>
-            <div>
-                <span class="badge bg-success" id="active-count">0</span> 활성 사용자
-                <button class="btn btn-sm btn-outline-primary ms-2" onclick="refreshSessions()">
-                    <i class="fas fa-sync-alt"></i> 새로고침
-                </button>
+<!-- 헤더 섹션 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1" style="color: var(--text-primary); font-weight: 700;">실시간 분석</h1>
+        <p class="text-muted mb-0">웹사이트 사용자 활동을 실시간으로 모니터링하세요</p>
+        <small class="text-primary">
+            <i class="fas fa-mouse-pointer me-1"></i>
+            차트나 테이블을 클릭하면 상세 정보를 볼 수 있습니다
+        </small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <span class="live-badge">
+            <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>
+            LIVE
+        </span>
+        <button class="btn btn-outline-primary btn-sm" onclick="toggleAutoRefresh()">
+            <i class="fas fa-pause" id="refresh-icon"></i>
+            <span id="refresh-text">일시정지</span>
+        </button>
+    </div>
+</div>
+
+<!-- 통계 카드 그리드 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card fade-in">
+            <div class="card-body position-relative">
+                <div class="stats-number" id="total-sessions">0</div>
+                <div class="stats-label">활성 세션</div>
+                <i class="fas fa-users stats-icon"></i>
             </div>
         </div>
-        
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover" id="sessions-table">
-                        <thead>
-                            <tr>
-                                <th>사용자 ID</th>
-                                <th>세션 ID</th>
-                                <th>현재 페이지</th>
-                                <th>활동 시간</th>
-                                <th>지속 시간</th>
-                                <th>액션</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sessions-tbody">
-                            <!-- 동적으로 채워짐 -->
-                        </tbody>
-                    </table>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card success fade-in">
+            <div class="card-body position-relative">
+                <div class="stats-number" id="total-events">0</div>
+                <div class="stats-label">총 이벤트</div>
+                <i class="fas fa-chart-line stats-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card info fade-in">
+            <div class="card-body position-relative">
+                <div class="stats-number" id="avg-session-time">0분</div>
+                <div class="stats-label">평균 세션 시간</div>
+                <i class="fas fa-clock stats-icon"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card stats-card warning fade-in">
+            <div class="card-body position-relative">
+                <div class="stats-number" id="conversion-rate">0%</div>
+                <div class="stats-label">전환율</div>
+                <i class="fas fa-target stats-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 차트 섹션 -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card slide-up">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">실시간 유입 현황</h5>
+                    <small class="text-muted">최근 20개 시점의 사용자 유입 추이</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <small class="text-muted" id="last-update">업데이트 중...</small>
+                    <div class="loading" id="chart-loading" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="chart-container">
+                    <canvas id="realtime-chart"></canvas>
                 </div>
             </div>
         </div>
     </div>
+    <div class="col-lg-4">
+        <div class="card slide-up">
+            <div class="card-header">
+                <h5 class="mb-1">페이지별 인기도</h5>
+                <small class="text-muted">조회수 기준 상위 페이지</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="chart-container">
+                    <canvas id="page-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 유입경로 차트 -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card slide-up">
+            <div class="card-header">
+                <h5 class="mb-1">유입경로 분석</h5>
+                <small class="text-muted">사용자가 어떤 경로를 통해 접속하는지 확인하세요</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="referrer-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 실시간 세션 테이블 -->
+<div class="card slide-up">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-1">실시간 활성 세션</h5>
+            <small class="text-muted">현재 웹사이트를 이용 중인 사용자들</small>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="update-indicator" id="update-status">
+                <div class="pulse-dot"></div>
+                <span>실시간 업데이트</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success" id="active-count">0</span>
+                <span class="text-muted">명 접속 중</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="sessions-table-container">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="user_id" style="cursor: pointer;">
+                                사용자
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="session_id" style="cursor: pointer;">
+                                세션 ID
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="current_page" style="cursor: pointer;">
+                                현재 페이지
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="last_activity" style="cursor: pointer;">
+                                마지막 활동
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th class="sortable" data-sort="duration" style="cursor: pointer;">
+                                세션 시간
+                                <i class="fas fa-sort sort-icon ms-1 text-muted"></i>
+                            </th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-tbody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <div class="loading me-2"></div>
+                                데이터를 불러오는 중...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 빈 상태 -->
+<div id="empty-state" class="text-center py-5" style="display: none;">
+    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+    <h4 class="text-muted">아직 활성 세션이 없습니다</h4>
+    <p class="text-muted">사용자가 웹사이트에 접속하면 실시간으로 표시됩니다.</p>
+</div>
+
+<!-- 커스텀 툴팁 -->
+<div id="chart-tooltip" class="custom-tooltip position-absolute" style="display: none; z-index: 1000; pointer-events: none;">
+    <div id="tooltip-content"></div>
 </div>
 
 <!-- 세션 상세 모달 -->
@@ -42,136 +194,108 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">세션 상세 정보</h5>
+                <div>
+                    <h5 class="modal-title mb-1">세션 상세 정보</h5>
+                    <small class="text-muted">사용자의 웹사이트 이용 기록</small>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="session-details">
-                <!-- 세션 상세 정보 -->
+                <div class="text-center py-4">
+                    <div class="loading me-2"></div>
+                    세션 정보를 불러오는 중...
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-let sessionsData = [];
-let refreshInterval;
-
-// 페이지 로드 시 초기화
-document.addEventListener('DOMContentLoaded', function() {
-    loadActiveSessions();
-    startAutoRefresh();
-});
-
-// 활성 세션 로드
-async function loadActiveSessions() {
-    try {
-        const response = await fetch('/api/sessions/active/');
-        const data = await response.json();
-        sessionsData = data;
-        renderSessionsTable(data);
-        updateActiveCount(data.length);
-    } catch (error) {
-        console.error('Error loading sessions:', error);
-        showError('세션 데이터를 불러오는데 실패했습니다.');
-    }
-}
-
-// 세션 테이블 렌더링
-function renderSessionsTable(sessions) {
-    const tbody = document.getElementById('sessions-tbody');
-    tbody.innerHTML = '';
-    
-    sessions.forEach(session => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${session.user_id}</td>
-            <td><code>${session.session_id.substring(0, 12)}...</code></td>
-            <td><a href="${session.current_page}" target="_blank">${truncateUrl(session.current_page)}</a></td>
-            <td>${formatTimestamp(session.last_activity)}</td>
-            <td>${formatDuration(session.duration)}</td>
-            <td>
-                <button class="btn btn-sm btn-outline-info" onclick="showSessionDetails('${session.session_id}')">
-                    상세보기
-                </button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-// 세션 상세 정보 표시
-async function showSessionDetails(sessionId) {
-    try {
-        const response = await fetch(`/api/sessions/${sessionId}/events/`);
-        const events = await response.json();
-        
-        const modalBody = document.getElementById('session-details');
-        modalBody.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>세션 정보</h6>
-                    <p><strong>세션 ID:</strong> ${sessionId}</p>
-                    <p><strong>이벤트 수:</strong> ${events.length}</p>
-                </div>
-                <div class="col-md-6">
-                    <h6>최근 활동</h6>
-                    <div class="timeline">
-                        ${events.slice(-5).map(event => `
-                            <div class="timeline-item">
-                                <small class="text-muted">${formatTimestamp(event.timestamp)}</small><br>
-                                <strong>${event.event_type}</strong>: ${event.page_url}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        new bootstrap.Modal(document.getElementById('sessionModal')).show();
-    } catch (error) {
-        console.error('Error loading session details:', error);
-    }
-}
-
-// 유틸리티 함수들
-function formatTimestamp(timestamp) {
-    return new Date(parseInt(timestamp)).toLocaleString('ko-KR');
-}
-
-function formatDuration(duration) {
-    const minutes = Math.floor(duration / 60000);
-    const seconds = Math.floor((duration % 60000) / 1000);
-    return `${minutes}분 ${seconds}초`;
-}
-
-function truncateUrl(url) {
-    return url.length > 50 ? url.substring(0, 50) + '...' : url;
-}
-
-function updateActiveCount(count) {
-    document.getElementById('active-count').textContent = count;
-}
-
-function refreshSessions() {
-    loadActiveSessions();
-}
-
-function startAutoRefresh() {
-    refreshInterval = setInterval(loadActiveSessions, 10000); // 10초마다 새로고침
-}
-
-function showError(message) {
-    // 에러 토스트 표시
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-danger border-0';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">${message}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+<!-- 알림 토스트 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="update-toast" class="toast" role="alert">
+        <div class="toast-header">
+            <i class="fas fa-sync-alt text-primary me-2"></i>
+            <strong class="me-auto">실시간 업데이트</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
         </div>
-    `;
-    document.body.appendChild(toast);
-    new bootstrap.Toast(toast).show();
+        <div class="toast-body">
+            새로운 데이터가 업데이트되었습니다.
+        </div>
+    </div>
+</div>
+
+<style>
+/* 페이지별 추가 스타일 */
+.chart-container canvas {
+    max-height: 300px;
 }
-</script>
+
+.stats-card {
+    min-height: 120px;
+}
+
+.table th {
+    border-top: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.table td {
+    font-size: 0.9rem;
+}
+
+.table code {
+    background: rgba(49, 130, 246, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.modal-dialog {
+    max-width: 800px;
+}
+
+.toast-container {
+    z-index: 1060;
+}
+
+/* 호버 효과 */
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.table tbody tr:hover {
+    background: rgba(49, 130, 246, 0.03);
+    cursor: pointer;
+}
+
+.table-row-clickable:hover {
+    background: rgba(49, 130, 246, 0.08) !important;
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+/* 차트 클릭 가능 표시 */
+canvas {
+    cursor: pointer;
+}
+
+canvas:hover {
+    opacity: 0.9;
+}
+
+/* 애니메이션 지연 */
+.fade-in:nth-child(1) { animation-delay: 0.1s; }
+.fade-in:nth-child(2) { animation-delay: 0.2s; }
+.fade-in:nth-child(3) { animation-delay: 0.3s; }
+.fade-in:nth-child(4) { animation-delay: 0.4s; }
+
+.slide-up:nth-child(1) { animation-delay: 0.1s; }
+.slide-up:nth-child(2) { animation-delay: 0.2s; }
+.slide-up:nth-child(3) { animation-delay: 0.3s; }
+</style>
+
+<!-- 스크립트는 realtime-dashboard.js로 이동됨 -->
 {% endblock %}

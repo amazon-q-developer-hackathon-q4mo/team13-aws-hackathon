@@ -104,12 +104,60 @@ class StatisticsViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    @action(detail=False, methods=['get'])
+    def referrers(self, request):
+        """유입경로별 통계"""
+        try:
+            referrer_stats = db_client.get_referrer_stats()
+            return Response(referrer_stats)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """요약 통계"""
+        try:
+            summary_stats = db_client.get_summary_stats()
+            return Response(summary_stats)
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     def aggregate_by_hour(self, events):
+        from datetime import datetime, timedelta, timezone as dt_timezone
+        from django.utils import timezone
+        
         hourly_counts = defaultdict(int)
         
+        # 한국 시간 기준으로 현재 시간 가져오기
+        now = timezone.localtime(timezone.now())
+        hours_range = []
+        
+        # 100분 전부터 현재까지 5분 간격으로 라벨 생성 (20개 포인트)
+        for i in range(20):
+            time_point = now - timedelta(minutes=(19 - i) * 5)
+            # 한국 시간대로 포맷팅
+            time_key = time_point.strftime('%H:%M')
+            hours_range.append((time_key, time_point))
+            hourly_counts[time_key] = 0
+        
+        # 실제 이벤트 데이터로 카운트 업데이트
         for event in events:
             timestamp = int(event.get('timestamp', 0))
-            hour = datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:00')
-            hourly_counts[hour] += 1
+            # UTC 타임스탬프를 한국 시간대로 변환
+            utc_time = datetime.fromtimestamp(timestamp / 1000, tz=dt_timezone.utc)
+            event_time = timezone.localtime(utc_time)
+            # 이벤트 시간을 5분 단위로 맞춤
+            minute_slot = (event_time.minute // 5) * 5
+            event_rounded = event_time.replace(minute=minute_slot, second=0, microsecond=0)
+            time_key = event_rounded.strftime('%H:%M')
+            if time_key in hourly_counts:
+                hourly_counts[time_key] += 1
         
-        return [{'hour': k, 'count': v} for k, v in sorted(hourly_counts.items())]
+        # 시간 순서대로 정렬하여 반환
+        return [{'hour': hour_key, 'count': hourly_counts[hour_key]} for hour_key, _ in hours_range]
