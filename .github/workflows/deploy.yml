@@ -31,6 +31,28 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        cd src
+        pip install -r requirements.txt
+
+    - name: Upload static files to S3
+      run: |
+        cd infrastructure
+        STATIC_BUCKET=$(terraform output -raw static_files_bucket 2>/dev/null || echo "")
+        if [ -n "$STATIC_BUCKET" ]; then
+          cd ../src
+          export STATIC_FILES_BUCKET=$STATIC_BUCKET
+          python manage.py collectstatic --noinput
+          aws s3 sync staticfiles/ s3://$STATIC_BUCKET/static/ --delete
+          echo "✅ 정적 파일 S3 업로드 완료"
+        fi
+
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:

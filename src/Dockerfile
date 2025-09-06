@@ -14,8 +14,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 애플리케이션 코드 복사
 COPY . .
 
-# 정적 파일 수집
+# 정적 파일 수집 및 S3 업로드
 RUN python manage.py collectstatic --noinput
+
+# S3 업로드 스크립트 (빌드 시점에는 실행하지 않음)
+COPY scripts/upload_static.sh /app/
+RUN chmod +x /app/upload_static.sh
 
 # 헬스체크 엔드포인트
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

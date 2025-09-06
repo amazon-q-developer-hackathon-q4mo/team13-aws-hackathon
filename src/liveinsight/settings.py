@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "drf_spectacular",
+    "storages",
     "analytics",
     "dashboard",
 ]
@@ -124,7 +125,23 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "https://liveinsight-static-files.s3.amazonaws.com/static/"
+# S3 정적 파일 설정
+STATIC_FILES_BUCKET = os.getenv('STATIC_FILES_BUCKET', '')
+
+if STATIC_FILES_BUCKET:
+    # 프로덕션: S3 사용
+    STATIC_URL = f"https://{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com/static/"
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_STORAGE_BUCKET_NAME = STATIC_FILES_BUCKET
+    AWS_S3_CUSTOM_DOMAIN = f"{STATIC_FILES_BUCKET}.s3.{AWS_DEFAULT_REGION}.amazonaws.com"
+    AWS_LOCATION = 'static'
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+else:
+    # 개발: 로컬 파일 사용
+    STATIC_URL = "/static/"
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
