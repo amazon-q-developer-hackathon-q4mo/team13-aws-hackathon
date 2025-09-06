@@ -12,6 +12,8 @@ class TossDashboard {
             stats: {},
             isLoading: false
         };
+        this.isModalOpen = false;
+        this.updateCounter = 0;
         
         this.init();
     }
@@ -184,15 +186,20 @@ class TossDashboard {
             this.autoRefresh = !this.autoRefresh;
             const icon = document.getElementById('refresh-icon');
             const text = document.getElementById('refresh-text');
+            const updateStatus = document.getElementById('update-status');
             
             if (this.autoRefresh) {
                 icon.className = 'fas fa-pause';
                 text.textContent = '일시정지';
+                updateStatus.classList.remove('paused');
+                updateStatus.querySelector('span').textContent = '실시간 업데이트';
                 this.startDataPolling();
                 this.showToast('자동 새로고침이 시작되었습니다.');
             } else {
                 icon.className = 'fas fa-play';
                 text.textContent = '재시작';
+                updateStatus.classList.add('paused');
+                updateStatus.querySelector('span').textContent = '업데이트 일시정지';
                 if (this.refreshInterval) {
                     clearInterval(this.refreshInterval);
                 }
@@ -203,6 +210,7 @@ class TossDashboard {
         // 세션 상세 보기
         window.showSessionDetails = async (sessionId) => {
             try {
+                this.isModalOpen = true;
                 this.showModalLoading();
                 const response = await fetch(`/api/sessions/${sessionId}/events/`);
                 const events = await response.json();
@@ -221,6 +229,7 @@ class TossDashboard {
             } catch (error) {
                 console.error('Error loading session details:', error);
                 this.showToast('세션 정보를 불러오는데 실패했습니다.', 'error');
+                this.isModalOpen = false;
             }
         };
         
@@ -236,7 +245,15 @@ class TossDashboard {
         // 모달 닫힐 때 그림자 효과 제거
         const modal = document.getElementById('sessionModal');
         if (modal) {
+            modal.addEventListener('shown.bs.modal', () => {
+                this.isModalOpen = true;
+                this.updateModalStatus(true);
+            });
+            
             modal.addEventListener('hidden.bs.modal', () => {
+                this.isModalOpen = false;
+                this.updateModalStatus(false);
+                
                 // 모든 backdrop 제거
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(backdrop => backdrop.remove());
@@ -257,12 +274,12 @@ class TossDashboard {
         // 즉시 로드
         this.loadAllData();
         
-        // 5초마다 업데이트
+        // 10초마다 업데이트 (모달이 열려있지 않을 때만)
         this.refreshInterval = setInterval(() => {
-            if (this.autoRefresh) {
+            if (this.autoRefresh && !this.isModalOpen) {
                 this.loadAllData();
             }
-        }, 5000);
+        }, 10000);
     }
     
     async loadAllData() {
@@ -301,10 +318,23 @@ class TossDashboard {
     }
     
     updateSessions(sessions) {
+        // 스마트 업데이트: 데이터가 실제로 변경되었을 때만 DOM 업데이트
+        const currentSessionIds = this.data.sessions.map(s => s.session_id).sort();
+        const newSessionIds = sessions.map(s => s.session_id).sort();
+        
+        const hasChanged = JSON.stringify(currentSessionIds) !== JSON.stringify(newSessionIds) ||
+                          this.data.sessions.length !== sessions.length;
+        
         this.data.sessions = sessions;
         
+        if (!hasChanged && this.updateCounter > 0) {
+            // 세션 목록이 변경되지 않았으면 시간 정보만 업데이트
+            this.updateSessionTimes(sessions);
+            return;
+        }
+        
+        this.updateCounter++;
         const tbody = document.getElementById('sessions-tbody');
-        const emptyState = document.getElementById('empty-state');
         
         if (sessions.length === 0) {
             tbody.innerHTML = `
@@ -316,39 +346,64 @@ class TossDashboard {
                 </tr>
             `;
         } else {
-            tbody.innerHTML = sessions.map((session, index) => `
-                <tr data-session-id="${session.session_id}" style="animation-delay: ${index * 0.05}s; cursor: pointer;" class="fade-in table-row-clickable">
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
-                                 style="width: 32px; height: 32px; font-size: 0.8rem; color: white;">
-                                ${session.user_id.charAt(session.user_id.length - 1).toUpperCase()}
+            // 부드러운 전환을 위한 페이드 효과
+            tbody.style.opacity = '0.7';
+            
+            setTimeout(() => {
+                tbody.innerHTML = sessions.map((session, index) => `
+                    <tr data-session-id="${session.session_id}" style="cursor: pointer;" class="table-row-clickable session-row">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" 
+                                     style="width: 32px; height: 32px; font-size: 0.8rem; color: white;">
+                                    ${session.user_id.charAt(session.user_id.length - 1).toUpperCase()}
+                                </div>
+                                <span class="fw-medium">${session.user_id}</span>
                             </div>
-                            <span class="fw-medium">${session.user_id}</span>
-                        </div>
-                    </td>
-                    <td><code>${session.session_id.substring(0, 12)}...</code></td>
-                    <td>
-                        <a href="${session.current_page}" target="_blank" class="text-decoration-none">
-                            ${this.truncateUrl(session.current_page)}
-                        </a>
-                    </td>
-                    <td>
-                        <small class="text-muted">${this.formatTimestamp(session.last_activity)}</small>
-                    </td>
-                    <td>
-                        <span class="badge bg-light text-dark">${this.formatDuration(session.duration)}</span>
-                    </td>
-                    <td>
-                        <button class="btn btn-outline-primary btn-sm" onclick="showSessionDetails('${session.session_id}')">
-                            <i class="fas fa-eye me-1"></i>상세보기
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+                        </td>
+                        <td><code>${session.session_id.substring(0, 12)}...</code></td>
+                        <td>
+                            <a href="${session.current_page}" target="_blank" class="text-decoration-none">
+                                ${this.truncateUrl(session.current_page)}
+                            </a>
+                        </td>
+                        <td class="last-activity">
+                            <small class="text-muted">${this.formatTimestamp(session.last_activity)}</small>
+                        </td>
+                        <td class="duration">
+                            <span class="badge bg-light text-dark">${this.formatDuration(session.duration)}</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm" onclick="showSessionDetails('${session.session_id}')">
+                                <i class="fas fa-eye me-1"></i>상세보기
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                tbody.style.opacity = '1';
+            }, 150);
         }
         
         document.getElementById('active-count').textContent = sessions.length;
+    }
+    
+    updateSessionTimes(sessions) {
+        // 시간 정보만 업데이트 (DOM 재생성 없이)
+        sessions.forEach(session => {
+            const row = document.querySelector(`tr[data-session-id="${session.session_id}"]`);
+            if (row) {
+                const lastActivityCell = row.querySelector('.last-activity small');
+                const durationCell = row.querySelector('.duration .badge');
+                
+                if (lastActivityCell) {
+                    lastActivityCell.textContent = this.formatTimestamp(session.last_activity);
+                }
+                if (durationCell) {
+                    durationCell.textContent = this.formatDuration(session.duration);
+                }
+            }
+        });
     }
     
     updateSummaryStats(stats) {
@@ -531,6 +586,23 @@ class TossDashboard {
         }
     }
     
+    updateModalStatus(isOpen) {
+        const updateStatus = document.getElementById('update-status');
+        const tableContainer = document.querySelector('.sessions-table-container');
+        
+        if (isOpen) {
+            updateStatus.classList.add('paused');
+            updateStatus.querySelector('span').textContent = '상세보기 중 (업데이트 일시정지)';
+            tableContainer.classList.add('update-paused');
+        } else {
+            if (this.autoRefresh) {
+                updateStatus.classList.remove('paused');
+                updateStatus.querySelector('span').textContent = '실시간 업데이트';
+            }
+            tableContainer.classList.remove('update-paused');
+        }
+    }
+    
     renderSessionDetails(sessionId, events) {
         const startTime = events.length > 0 ? events[0].timestamp : null;
         const endTime = events.length > 0 ? events[events.length - 1].timestamp : null;
@@ -617,6 +689,7 @@ class TossDashboard {
     
     async showHourlyDetails(hour) {
         try {
+            this.isModalOpen = true;
             const response = await fetch(`/api/hourly-details/?hour=${encodeURIComponent(hour)}`);
             const data = await response.json();
             
@@ -678,11 +751,13 @@ class TossDashboard {
         } catch (error) {
             console.error('Error loading hourly details:', error);
             this.showToast('시간대 상세 정보를 불러오는데 실패했습니다.', 'error');
+            this.isModalOpen = false;
         }
     }
     
     async showPageDetails(pageUrl) {
         try {
+            this.isModalOpen = true;
             const response = await fetch(`/api/page-details/?page=${encodeURIComponent(pageUrl)}`);
             const data = await response.json();
             
@@ -755,6 +830,7 @@ class TossDashboard {
         } catch (error) {
             console.error('Error loading page details:', error);
             this.showToast('페이지 상세 정보를 불러오는데 실패했습니다.', 'error');
+            this.isModalOpen = false;
         }
     }
 }

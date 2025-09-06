@@ -106,33 +106,41 @@
             <h5 class="mb-1">실시간 활성 세션</h5>
             <small class="text-muted">현재 웹사이트를 이용 중인 사용자들</small>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-success" id="active-count">0</span>
-            <span class="text-muted">명 접속 중</span>
+        <div class="d-flex align-items-center gap-3">
+            <div class="update-indicator" id="update-status">
+                <div class="pulse-dot"></div>
+                <span>실시간 업데이트</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-success" id="active-count">0</span>
+                <span class="text-muted">명 접속 중</span>
+            </div>
         </div>
     </div>
     <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>사용자</th>
-                        <th>세션 ID</th>
-                        <th>현재 페이지</th>
-                        <th>마지막 활동</th>
-                        <th>세션 시간</th>
-                        <th>액션</th>
-                    </tr>
-                </thead>
-                <tbody id="sessions-tbody">
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            <div class="loading me-2"></div>
-                            데이터를 불러오는 중...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="sessions-table-container">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>사용자</th>
+                            <th>세션 ID</th>
+                            <th>현재 페이지</th>
+                            <th>마지막 활동</th>
+                            <th>세션 시간</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-tbody">
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <div class="loading me-2"></div>
+                                데이터를 불러오는 중...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
