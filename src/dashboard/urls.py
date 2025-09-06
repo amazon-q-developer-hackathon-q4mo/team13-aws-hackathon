@@ -1,4 +1,6 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -15,3 +17,8 @@ urlpatterns = [
     path('api/page-details/', views.api_page_details, name='api_page_details'),
     path('api/referrer-details/', views.api_referrer_details, name='api_referrer_details'),
 ]
+
+# Static files serving in production
+if settings.DEBUG or True:  # Always serve static files
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static('/static/', document_root=settings.STATICFILES_DIRS[0])
