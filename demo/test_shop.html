@@ -180,9 +180,7 @@
         // LiveInsight 초기화 - 배포된 API 엔드포인트 사용
         document.addEventListener('DOMContentLoaded', function() {
             // 환경에 따른 API 엔드포인트 선택
-            const apiUrl = window.location.hostname === 'localhost' 
-                ? 'http://localhost:8000/api/events/'
-                : 'https://qnwoi1ardd.execute-api.us-east-1.amazonaws.com/prod/events';
+            const apiUrl = 'https://qnwoi1ardd.execute-api.us-east-1.amazonaws.com/prod/events';
             
             LiveInsight.init({
                 apiUrl: apiUrl
