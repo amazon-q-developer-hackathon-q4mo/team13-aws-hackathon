@@ -365,6 +365,20 @@ resource "aws_cloudwatch_log_group" "app" {
   }
 }
 
+# Docker 이미지 빌드 및 푸시
+resource "null_resource" "docker_build" {
+  triggers = {
+    # 매번 빌드 실행
+    always_run = timestamp()
+  }
+
+  provisioner "local-exec" {
+    command = "cd .. && bash scripts/build.sh latest"
+  }
+
+  depends_on = [aws_ecr_repository.app]
+}
+
 # ECS 태스크 정의
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.project_name}-task"
@@ -438,6 +452,8 @@ resource "aws_ecs_task_definition" "app" {
   tags = {
     Name = "${var.project_name}-task"
   }
+
+  depends_on = [null_resource.docker_build]
 }
 
 # ECS 서비스
