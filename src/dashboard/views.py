@@ -10,6 +10,13 @@ from collections import defaultdict
 import json
 import pytz
 
+def calculate_duration(last_activity):
+    """마지막 활동 시간으로부터 경과 시간 계산 (밀리초)"""
+    if not last_activity:
+        return 0
+    current_time = int(timezone.now().timestamp() * 1000)
+    return max(0, current_time - int(last_activity))
+
 def index(request):
     return render(request, 'dashboard/index.html')
 
@@ -53,13 +60,14 @@ def api_hourly_stats(request):
         # 시간대별 집계
         hourly_counts = defaultdict(int)
         
-        # 서버 타임존 기준 현재 시간
+        # 로컬 타임존 기준 현재 시간
         now = timezone.now()
+        now_local = now.astimezone(timezone.get_current_timezone())
         hours_range = []
         
         # 100분 전부터 현재까지 5분 간격으로 라벨 생성 (20개 포인트)
         for i in range(20):
-            time_point = now - timedelta(minutes=(19 - i) * 5)
+            time_point = now_local - timedelta(minutes=(19 - i) * 5)
             time_key = time_point.strftime('%H:%M')
             hours_range.append(time_key)
             hourly_counts[time_key] = 0
@@ -72,7 +80,8 @@ def api_hourly_stats(request):
             local_time = utc_time.astimezone(timezone.get_current_timezone())
             
             # 100분 이내 데이터만 포함
-            if (now - local_time).total_seconds() <= 100 * 60:
+            time_diff = (now - local_time).total_seconds()
+            if time_diff <= 100 * 60 and time_diff >= 0:
                 # 이벤트 시간을 5분 단위로 맞춤
                 minute_slot = (local_time.minute // 5) * 5
                 event_rounded = local_time.replace(minute=minute_slot, second=0, microsecond=0)
@@ -236,11 +245,14 @@ def api_page_details(request):
             hour_key = local_time.strftime('%H:00')
             hourly_distribution[hour_key] += 1
         
+        # 시간대별 분포를 시간순으로 정렬
+        sorted_hourly = dict(sorted(hourly_distribution.items()))
+        
         return JsonResponse({
             'page_url': page_url,
             'total_views': len(filtered_events),
             'recent_events': filtered_events[:10],  # 최근 10개
-            'hourly_distribution': dict(hourly_distribution)
+            'hourly_distribution': sorted_hourly
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
@@ -297,11 +309,14 @@ def api_referrer_details(request):
             hour_key = local_time.strftime('%H:00')
             hourly_distribution[hour_key] += 1
         
+        # 시간대별 분포를 시간순으로 정렬
+        sorted_hourly = dict(sorted(hourly_distribution.items()))
+        
         return JsonResponse({
             'referrer': referrer,
             'total_visitors': len(filtered_events),
             'recent_visits': filtered_events[:10],  # 최근 10개
-            'hourly_distribution': dict(hourly_distribution)
+            'hourly_distribution': sorted_hourly
         })
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
