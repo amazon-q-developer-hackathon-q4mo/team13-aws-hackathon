@@ -8,6 +8,11 @@ output "alb_zone_id" {
   value       = aws_lb.main.zone_id
 }
 
+output "alb_arn_suffix" {
+  description = "ARN suffix of the load balancer"
+  value       = aws_lb.main.arn_suffix
+}
+
 output "ecr_repository_url" {
   description = "URL of the ECR repository"
   value       = aws_ecr_repository.app.repository_url
@@ -43,7 +48,12 @@ output "cloudwatch_log_group" {
   value       = aws_cloudwatch_log_group.app.name
 }
 
+output "dashboard_name" {
+  description = "CloudWatch dashboard name"
+  value       = aws_cloudwatch_dashboard.main.dashboard_name
+}
+
 output "cloudwatch_dashboard_url" {
   description = "CloudWatch dashboard URL"
-  value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
 }

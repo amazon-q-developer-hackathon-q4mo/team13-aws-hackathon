@@ -42,3 +42,19 @@ output "api_gateway_id" {
   description = "API Gateway ID"
   value       = aws_api_gateway_rest_api.main.id
 }
+
+# Django 웹 애플리케이션 출력
+output "web_app_url" {
+  description = "Django web application URL"
+  value       = "http://${module.web_app.alb_dns_name}"
+}
+
+output "web_app_dashboard_url" {
+  description = "Django dashboard URL"
+  value       = "http://${module.web_app.alb_dns_name}/dashboard/"
+}
+
+output "cloudwatch_dashboard_url" {
+  description = "CloudWatch dashboard URL"
+  value       = "https://console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${module.web_app.dashboard_name}"
+}
