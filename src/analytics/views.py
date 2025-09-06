@@ -1,14 +1,50 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.core.cache import cache
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from .models import Event, Session
 from .serializers import EventSerializer, SessionSerializer, ActiveSessionSerializer
 from .dynamodb_client import db_client
 from datetime import datetime
 from collections import defaultdict
+import json
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EventCollectionView(APIView):
+    """이벤트 수집 API"""
+    
+    def post(self, request):
+        try:
+            if hasattr(request, 'data') and request.data:
+                event_data = request.data
+            else:
+                event_data = json.loads(request.body.decode('utf-8'))
+            
+            required_fields = ['user_id', 'session_id', 'event_type', 'timestamp']
+            for field in required_fields:
+                if field not in event_data:
+                    return Response(
+                        {'error': f'Missing required field: {field}'}, 
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            db_client.save_event(event_data)
+            return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+            
+        except json.JSONDecodeError:
+            return Response(
+                {'error': 'Invalid JSON data'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class EventViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = EventSerializer
