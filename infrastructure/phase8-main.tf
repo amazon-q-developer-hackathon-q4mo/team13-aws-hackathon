@@ -1,17 +1,5 @@
 # Phase 8 통합 배포 설정
-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
+# 기본 provider는 main.tf에서 설정됨
 
 # 환경별 변수
 locals {
@@ -42,8 +30,6 @@ module "ssl" {
   aws_region   = var.aws_region
   project_name = var.project_name
   domain_name  = local.domain_name
-  
-  depends_on = [module.dns]
 }
 
 # CDN 모듈
@@ -53,8 +39,6 @@ module "cdn" {
   aws_region   = var.aws_region
   project_name = var.project_name
   domain_name  = local.domain_name
-  
-  depends_on = [module.ssl]
 }
 
 # 보안 모듈
@@ -66,8 +50,6 @@ module "security" {
   cloudfront_distribution_id = module.cdn.cloudfront_distribution_id
   blocked_countries         = var.blocked_countries
   rate_limit               = var.rate_limit
-  
-  depends_on = [module.cdn]
 }
 
 # Parameter Store에 환경 설정 저장
