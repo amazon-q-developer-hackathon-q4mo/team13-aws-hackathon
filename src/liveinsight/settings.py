@@ -144,6 +144,10 @@ if STATIC_FILES_BUCKET:
     AWS_S3_OBJECT_PARAMETERS = {
         'CacheControl': 'max-age=86400',
     }
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'max-age=86400',
+    }
+    AWS_DEFAULT_ACL = None
 else:
     # 개발: 로컬 파일 사용
     STATIC_URL = "/static/"
